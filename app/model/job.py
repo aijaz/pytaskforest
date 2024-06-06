@@ -2,6 +2,7 @@ import re
 
 import tomlkit
 import tomlkit.exceptions
+import tomlkit.items
 from attrs import define, field
 
 from .exceptions import (PyTaskforestParseException,
@@ -9,6 +10,7 @@ from .exceptions import (PyTaskforestParseException,
                          MSG_START_TIME_PARSING_FAILED,
                          MSG_UNTIL_TIME_PARSING_FAILED,
                          MSG_UNRECOGNIZED_PARAM,
+                         MSG_INVALID_TYPE,
                          )
 
 
@@ -45,6 +47,11 @@ class Job:
         inner_data = match[2]
         if not inner_data:
             return j
+
+        # convert true, false to lowercase
+        patterns = ((re.compile('(= *)TRUE\\b', flags=re.IGNORECASE), '= true'), (re.compile('(= *)FALSE\\b', flags=re.IGNORECASE), '= false'))
+        for pattern, repl in patterns:
+            inner_data = re.sub(pattern, repl, inner_data)
 
         toml_str = f' d = {{ {inner_data} }}'
 
@@ -112,3 +119,56 @@ class Job:
         for key in d:
             if key not in valid_keys:
                 raise (PyTaskforestParseException(f"{MSG_UNRECOGNIZED_PARAM}: {job_name}"))
+
+        strs = [
+            'tz',
+            'queue',
+            'email',
+            'retry_email',
+            'retry_success-email',
+            'comment',
+        ]
+
+        ints = [
+            'every',
+            'num_retries',
+            'retry_sleep_min',
+        ]
+
+        bools = [
+            'chained',
+            'no_retry_email',
+            'no_retry_success_email',
+        ]
+
+        str_lists = [
+            'token',
+        ]
+
+        def simple_type(i) -> str:
+            if type(i) is tomlkit.items.String:
+                return 'str'
+            elif type(i) is tomlkit.items.Integer:
+                return 'int'
+            elif type(i) is bool:
+                return 'bool'
+            else:
+                return type(i)
+
+        for key in strs:
+            if key in d and type(d[key]) is not tomlkit.items.String:
+                raise PyTaskforestParseException(f"{MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+
+        for key in ints:
+            if key in d and type(d[key]) is not tomlkit.items.Integer:
+                raise PyTaskforestParseException(f"{MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+
+        for key in bools:
+            if key in d and type(d[key]) is not bool:
+                raise PyTaskforestParseException(f"{MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+
+        for key in str_lists:
+            if key in d:
+                for i in d[key]:
+                    if type(i) is not tomlkit.items.String:
+                        raise PyTaskforestParseException(f"{MSG_INVALID_TYPE} {job_name}/{key} ({d[key]} :: {i})")
