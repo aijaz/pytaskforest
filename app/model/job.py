@@ -12,6 +12,7 @@ from .exceptions import (PyTaskforestParseException,
                          MSG_UNRECOGNIZED_PARAM,
                          MSG_INVALID_TYPE,
                          )
+from .parse_utils import parse_time, lower_true_false, simple_type
 
 
 @define
@@ -49,9 +50,7 @@ class Job:
             return j
 
         # convert true, false to lowercase
-        patterns = ((re.compile('(= *)TRUE\\b', flags=re.IGNORECASE), '= true'), (re.compile('(= *)FALSE\\b', flags=re.IGNORECASE), '= false'))
-        for pattern, repl in patterns:
-            inner_data = re.sub(pattern, repl, inner_data)
+        inner_data = lower_true_false(inner_data)
 
         toml_str = f' d = {{ {inner_data} }}'
 
@@ -64,8 +63,8 @@ class Job:
 
         cls.validate_inner_params(d, j.job_name)
 
-        j.start_time_hr, j.start_time_min = cls.parse_time(d, j, 'start', MSG_START_TIME_PARSING_FAILED)
-        j.until_hr, j.until_min = cls.parse_time(d, j, 'until', MSG_UNTIL_TIME_PARSING_FAILED)
+        j.start_time_hr, j.start_time_min = parse_time(d, j.job_name, 'start', MSG_START_TIME_PARSING_FAILED)
+        j.until_hr, j.until_min = parse_time(d, j.job_name, 'until', MSG_UNTIL_TIME_PARSING_FAILED)
         j.tz = d.get('tz')
         j.every = d.get('every')
         j.chained = d.get('chained')
@@ -81,21 +80,6 @@ class Job:
         j.comment = d.get('comment')
 
         return j
-
-    @classmethod
-    def parse_time(cls, d, j, field_name, exception_str) -> (int | None, int | None):
-        if val := d.get(field_name):
-            if len(val) != 4:
-                raise PyTaskforestParseException(f"{exception_str} {j.job_name}")
-            try:
-                hh, mm = (int(val[:2]), int(val[2:]))
-            except ValueError as e:
-                raise PyTaskforestParseException(
-                    f"{exception_str} {j.job_name}"
-                ) from e
-            return hh, mm
-
-        return None, None
 
     @classmethod
     def validate_inner_params(cls, d, job_name):
@@ -118,7 +102,7 @@ class Job:
         ]
         for key in d:
             if key not in valid_keys:
-                raise (PyTaskforestParseException(f"{MSG_UNRECOGNIZED_PARAM}: {job_name}"))
+                raise (PyTaskforestParseException(f"{MSG_UNRECOGNIZED_PARAM}: {job_name}/{key}"))
 
         strs = [
             'tz',
@@ -144,16 +128,6 @@ class Job:
         str_lists = [
             'token',
         ]
-
-        def simple_type(i) -> str:
-            if type(i) is tomlkit.items.String:
-                return 'str'
-            elif type(i) is tomlkit.items.Integer:
-                return 'int'
-            elif type(i) is bool:
-                return 'bool'
-            else:
-                return type(i)
 
         for key in strs:
             if key in d and type(d[key]) is not tomlkit.items.String:
