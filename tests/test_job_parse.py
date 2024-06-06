@@ -113,7 +113,7 @@ def test_job_invalid_parse(job_str):
 job_invalid_type_parameters = [
     ('tz', ('J_Job(tz=1)', "J_Job/tz (1) is type int")),
     ('tz bool', ('J_Job(tz=true)', "J_Job/tz (True) is type bool")),
-    ('tz bool', ('J_Job(tz=True)', "J_Job/tz (True) is type bool")),
+    ('tz bool', ('J_Job(queue = "a", tz=True)', "J_Job/tz (True) is type bool")),
     ('queue', ('J_Job(queue=2)', "J_Job/queue (2) is type int")),
     ('queue bool', ('J_Job(queue=false)', "J_Job/queue (False) is type bool")),
     ('queue bool', ('J_Job(queue=False)', "J_Job/queue (False) is type bool")),

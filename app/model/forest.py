@@ -1,3 +1,5 @@
+import re
+
 from attrs import define
 
 from .job import Job
@@ -10,7 +12,13 @@ class Forest:
 
     @classmethod
     def parse(cls, job_string: str):
-        j = cls(
-            jobs=[[]]
-        )
-        return j
+        return cls(jobs=[])
+
+    @classmethod
+    def split_jobs(cls, line: str) -> [Job]:
+        pattern = re.compile('#.*')
+        line = re.sub(pattern, '', line)
+
+        pattern = re.compile(r'([^(]+\([^)]*\))')
+        job_strs = [i.strip() for i in re.findall(pattern, line)]
+        return [Job.parse(job_str) for job_str in job_strs]
