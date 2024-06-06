@@ -1,6 +1,13 @@
 import re
 
+import tomlkit
+import tomlkit.exceptions
 from attrs import define, field
+
+from .exceptions import (PyTaskforestParseException,
+                         MSG_INNER_PARSING_FAILED,
+                         MSG_START_TIME_PARSING_FAILED,
+                         )
 
 
 @define
@@ -28,7 +35,31 @@ class Job:
         j = cls(
             job_name=""
         )
-        pattern = re.compile('([0-9A-Za-z_])+\((.*)\)')
+        pattern = re.compile('([0-9A-Za-z_]+)\((.*)\)')
         match = pattern.match(job_string)
         j.job_name = match[1]
+
+        inner_data = match[2]
+        if not inner_data:
+            return j
+
+        toml_str = f' d = {{ {inner_data} }}'
+
+        try:
+            toml_d = tomlkit.loads(toml_str)
+        except tomlkit.exceptions.UnexpectedCharError as e:
+            raise PyTaskforestParseException(MSG_INNER_PARSING_FAILED) from e
+
+        d = toml_d.get('d', {})
+
+        if start := d.get('start'):
+            if len(start) != 4:
+                raise PyTaskforestParseException(f"{MSG_START_TIME_PARSING_FAILED} {j.job_name}")
+            try:
+                j.start_time_hr, j.start_time_min = (int(start[:2]), int(start[2:]))
+            except ValueError as e:
+                raise PyTaskforestParseException(
+                    f"{MSG_START_TIME_PARSING_FAILED} {j.job_name}"
+                ) from e
+
         return j
