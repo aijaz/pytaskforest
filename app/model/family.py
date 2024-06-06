@@ -1,3 +1,5 @@
+import re
+
 from attrs import define, field
 import tomlkit
 import tomlkit.exceptions
@@ -82,6 +84,30 @@ class Family:
             fam.calendar_or_days = Days(days=d['days'])
         else:
             fam.calendar_or_days = Calendar('daily')
+
+        # parse the rest of the lines
+        fam.forests = [Forest(jobs=[])]
+        strip_comments_pattern = re.compile('#.*')
+        dashes_pattern = re.compile('^-+$')
+
+        for line in lines:
+            line = re.sub(strip_comments_pattern, '', line).strip()
+            if not line:
+                continue
+
+            if dashes_pattern.match(line):
+                # new family
+                if len(fam.forests[-1].jobs) > 0:
+                    fam.forests.append(Forest(jobs=[]))
+                continue
+
+            # now we have a line of jobs
+            jobs = Forest.split_jobs(line)
+            fam.forests[-1].jobs.append(jobs)
+
+        # get rid of last forest if it has no jobs
+        if len(fam.forests[-1].jobs) == 0:
+            fam.forests.pop()
 
         return fam
 
