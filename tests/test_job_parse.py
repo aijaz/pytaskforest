@@ -5,6 +5,8 @@ from app.model.exceptions import (
     PyTaskforestParseException,
     MSG_INNER_PARSING_FAILED,
     MSG_START_TIME_PARSING_FAILED,
+    MSG_UNTIL_TIME_PARSING_FAILED,
+    MSG_UNRECOGNIZED_PARAM,
 )
 
 job_name_parameters = [
@@ -15,8 +17,9 @@ job_name_parameters = [
     ('start_with_number', ("1J_JOB1()", "1J_JOB1", None)),
     ('numbers_only', ("22()", "22", None)),
     ('with_inner_data', ("J_JOB1(sdfsdfd)", "J_JOB1__PARSE_FAIL", MSG_INNER_PARSING_FAILED)),
-    ('with_inner_val', ('J_JOB1(a = "b" )', "J_JOB1", None)),
-    ('with_inner_vals', ('J_JOB1(a = "b", c=1 )', "J_JOB1", None)),
+    ('with_inner_val', ('J_JOB1(a = "b" )', "J_JOB1", MSG_UNRECOGNIZED_PARAM)),
+    ('with_inner_vals', ('J_JOB1(a = "b", c=1 )', "J_JOB1", MSG_UNRECOGNIZED_PARAM)),
+    ('with_inner_vals', ('J_JOB1(tz="GMT")', "J_JOB1", None)),
 ]
 
 
@@ -59,3 +62,48 @@ def test_job_start_parse(job_str, hh, mm, exception_str):
         job = Job.parse(job_str)
         assert job.start_time_hr == hh
         assert job.start_time_min == mm
+
+
+job_until_parameters = [
+    ('simple', ('J_Job(until = "0230")', 2, 30, None)),
+    ('two', ('J_Job(until = "26")', 2, 6, MSG_UNTIL_TIME_PARSING_FAILED)),
+    ('three', ('J_Job(until = "206")', 2, 6, MSG_UNTIL_TIME_PARSING_FAILED)),
+    ('None', ('J_Job()', None, None, None)),
+    ('bad hh', ('J_Job(until = "a206")', None, None, MSG_UNTIL_TIME_PARSING_FAILED)),
+    ('bad min', ('J_Job(until = "02a6")', None, None, MSG_UNTIL_TIME_PARSING_FAILED)),
+]
+
+
+@pytest.mark.parametrize(["job_str", "hh", "mm", "exception_str"],
+                         [i[1] for i in job_until_parameters],
+                         ids=[v[0] for v in job_until_parameters]
+                         )
+def test_job_until_parse(job_str, hh, mm, exception_str):
+    # sourcery skip: no-conditionals-in-tests
+    if exception_str:
+        with pytest.raises(PyTaskforestParseException) as e:
+            _ = Job.parse(job_str)
+        assert e.value.message.startswith(exception_str)
+    else:
+        job = Job.parse(job_str)
+        assert job.until_hr == hh
+        assert job.until_min == mm
+
+
+job_invalid_parameters = [
+    ('one good', ('J_Job(until = "0230", a=1)',)),
+    ('two bad', ('J_Job(until = "0230", a=1, b=1)',)),
+    ('zero good', ('J_Job(a=1)',)),
+    ('all_bad', ('J_Job(a=1, b=1)',)),
+]
+
+
+@pytest.mark.parametrize(["job_str"],
+                         [i[1] for i in job_invalid_parameters],
+                         ids=[v[0] for v in job_invalid_parameters]
+                         )
+def test_job_invalid_parse(job_str):
+    # sourcery skip: no-conditionals-in-tests
+    with pytest.raises(PyTaskforestParseException) as e:
+        _ = Job.parse(job_str)
+    assert e.value.message.startswith(MSG_UNRECOGNIZED_PARAM)

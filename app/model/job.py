@@ -7,6 +7,8 @@ from attrs import define, field
 from .exceptions import (PyTaskforestParseException,
                          MSG_INNER_PARSING_FAILED,
                          MSG_START_TIME_PARSING_FAILED,
+                         MSG_UNTIL_TIME_PARSING_FAILED,
+                         MSG_UNRECOGNIZED_PARAM,
                          )
 
 
@@ -16,7 +18,7 @@ class Job:
     start_time_hr: int | None = field(default=None)
     start_time_min: int | None = field(default=None)
     tz: str | None = field(default=None)
-    every: str | None = field(default=None)
+    every: int | None = field(default=None)
     until_hr: int | None = field(default=None)
     until_min: int | None = field(default=None)
     chained: bool | None = field(default=None)
@@ -29,6 +31,7 @@ class Job:
     retry_success_email: str | None = field(default=None)
     no_retry_email: bool | None = field(default=None)
     no_retry_success_email: bool | None = field(default=None)
+    comment: str | None = field(default=None)
 
     @classmethod
     def parse(cls, job_string: str):
@@ -52,14 +55,60 @@ class Job:
 
         d = toml_d.get('d', {})
 
-        if start := d.get('start'):
-            if len(start) != 4:
-                raise PyTaskforestParseException(f"{MSG_START_TIME_PARSING_FAILED} {j.job_name}")
-            try:
-                j.start_time_hr, j.start_time_min = (int(start[:2]), int(start[2:]))
-            except ValueError as e:
-                raise PyTaskforestParseException(
-                    f"{MSG_START_TIME_PARSING_FAILED} {j.job_name}"
-                ) from e
+        cls.validate_inner_params(d, j.job_name)
+
+        j.start_time_hr, j.start_time_min = cls.parse_time(d, j, 'start', MSG_START_TIME_PARSING_FAILED)
+        j.until_hr, j.until_min = cls.parse_time(d, j, 'until', MSG_UNTIL_TIME_PARSING_FAILED)
+        j.tz = d.get('tz')
+        j.every = d.get('every')
+        j.chained = d.get('chained')
+        j.token = d.get('token')
+        j.num_retries = d.get('num_retries')
+        j.retry_sleep_min = d.get('retry_sleep_min')
+        j.queue = d.get('queue')
+        j.email = d.get('email')
+        j.retry_email = d.get('retry_email')
+        j.retry_success_email = d.get('retry_success-email')
+        j.no_retry_email = d.get('no_retry_email')
+        j.no_retry_success_email = d.get('no_retry_success_email')
+        j.comment = d.get('comment')
 
         return j
+
+    @classmethod
+    def parse_time(cls, d, j, field_name, exception_str) -> (int | None, int | None):
+        if val := d.get(field_name):
+            if len(val) != 4:
+                raise PyTaskforestParseException(f"{exception_str} {j.job_name}")
+            try:
+                hh, mm = (int(val[:2]), int(val[2:]))
+            except ValueError as e:
+                raise PyTaskforestParseException(
+                    f"{exception_str} {j.job_name}"
+                ) from e
+            return hh, mm
+
+        return None, None
+
+    @classmethod
+    def validate_inner_params(cls, d, job_name):
+        valid_keys = [
+            'start',
+            'until',
+            'tz',
+            'every',
+            'chained',
+            'token',
+            'num_retries',
+            'retry_sleep_min',
+            'queue',
+            'email',
+            'retry_email',
+            'retry_success-email',
+            'no_retry_email',
+            'no_retry_success_email',
+            'comment',
+        ]
+        for key in d:
+            if key not in valid_keys:
+                raise (PyTaskforestParseException(f"{MSG_UNRECOGNIZED_PARAM}: {job_name}"))

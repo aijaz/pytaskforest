@@ -7,3 +7,5 @@ class PyTaskforestParseException(Exception):
 
 MSG_INNER_PARSING_FAILED = "Job inner data parsing failed"
 MSG_START_TIME_PARSING_FAILED = "Start Time Parsing failed for job:"
+MSG_UNTIL_TIME_PARSING_FAILED = "Until Time Parsing failed for job:"
+MSG_UNRECOGNIZED_PARAM = "Unrecognized job parameter for job:"
