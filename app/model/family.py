@@ -88,7 +88,7 @@ class Family:
         # parse the rest of the lines
         fam.forests = [Forest(jobs=[])]
         strip_comments_pattern = re.compile('#.*')
-        dashes_pattern = re.compile('^-+$')
+        dashes_pattern = re.compile('^[- ]+$')
 
         for line in lines:
             line = re.sub(strip_comments_pattern, '', line).strip()

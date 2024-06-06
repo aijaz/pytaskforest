@@ -216,3 +216,45 @@ def test_full_family_line_two_forests_with_one_empty_one():
     assert fam.forests[1].jobs[0][1].job_name == 'J7'
     assert fam.forests[1].jobs[0][2].job_name == 'J8'
     assert fam.forests[1].jobs[0][3].job_name == 'J9'
+
+
+def test_full_family_line_three_forests():
+    family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
+
+    J1() J2() # bar
+    # foo
+      J3() # foo
+    J4() J5()
+    ---
+    # foo
+    J6()  J7() J8() J9()
+     - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
+     J10()
+    """
+    fam = Family.parse(family_str)
+    assert fam.start_time_hr == 2
+    assert fam.start_time_min == 14
+    assert fam.tz == 'GMT'
+    assert fam.queue == 'main'
+    assert fam.email == 'a@b.c'
+    assert isinstance(fam.calendar_or_days, Calendar)
+    assert fam.calendar_or_days.calendar_name == 'daily'
+    assert len(fam.forests) == 3
+    assert len(fam.forests[0].jobs) == 3
+    assert len(fam.forests[0].jobs[0]) == 2
+    assert len(fam.forests[0].jobs[1]) == 1
+    assert len(fam.forests[0].jobs[2]) == 2
+    assert fam.forests[0].jobs[0][0].job_name == 'J1'
+    assert fam.forests[0].jobs[0][1].job_name == 'J2'
+    assert fam.forests[0].jobs[1][0].job_name == 'J3'
+    assert fam.forests[0].jobs[2][0].job_name == 'J4'
+    assert fam.forests[0].jobs[2][1].job_name == 'J5'
+    assert len(fam.forests[1].jobs) == 1
+    assert len(fam.forests[1].jobs[0]) == 4
+    assert fam.forests[1].jobs[0][0].job_name == 'J6'
+    assert fam.forests[1].jobs[0][1].job_name == 'J7'
+    assert fam.forests[1].jobs[0][2].job_name == 'J8'
+    assert fam.forests[1].jobs[0][3].job_name == 'J9'
+    assert len(fam.forests[2].jobs) == 1
+    assert len(fam.forests[2].jobs[0]) == 1
+    assert fam.forests[2].jobs[0][0].job_name == 'J10'
