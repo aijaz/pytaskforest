@@ -1,0 +1,3 @@
+family = { start = '02:00', tz = 'GMT',days = ['Mon', 'Wed', 'Fri'] }
+
+

@@ -1,3 +1,5 @@
+import re
+
 from attrs import define, field
 
 
@@ -26,4 +28,7 @@ class Job:
         j = cls(
             job_name=""
         )
+        pattern = re.compile('([0-9A-Za-z_])+\((.*)\)')
+        match = pattern.match(job_string)
+        j.job_name = match[1]
         return j
