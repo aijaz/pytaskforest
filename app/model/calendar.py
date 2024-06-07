@@ -25,7 +25,8 @@ class Calendar:
         result = False
 
         for rule in self.rules:
-            if match := self.does_rule_match(naive_dt, naive_dow, rule) is not None:
+            match = self.does_rule_match(naive_dt, naive_dow, rule)
+            if match is not None:
                 result = match
 
         return result
@@ -35,7 +36,7 @@ class Calendar:
         components = rule.split()
         if len(components) == 0:
             raise PyTaskforestParseException(f"{MSG_CALENDAR_INVALID_RULE} rule")
-        elif len(components) > 1:
+        elif len(components) > 1 and components[0] in '-+':
             plus_or_minus = components.pop(0)
 
         nth = None
@@ -145,7 +146,7 @@ class Calendar:
                 if nth == 4 and len(dates) < 5:
                     return False  # fifth dow does not exist
 
-                return plus_or_minus == '+' if dates[nth] == naive_dow else None
+                return plus_or_minus == '+' if dates[nth] == naive_date.day else None
             else:
                 return None
 
@@ -183,7 +184,7 @@ class Calendar:
                 else 8 - (naive_dow_of_first - dow)
             )
         ]
-        days_in_month = (-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+        days_in_month = [-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
         if calendar.isleap(yyyy):
             days_in_month[2] += 1
 
