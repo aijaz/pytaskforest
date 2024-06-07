@@ -1,6 +1,38 @@
+import pytest
+
 from app.model.forest import Forest
 from app.model.family import Family, Calendar, Days
 from app.model.job import Job
+from app.model.config import Config
+
+@pytest.fixture
+def monday_config():
+    return Config.from_str("""
+    calendars.mondays = [
+      "every Monday */*"
+    ]
+    """)
+
+
+@pytest.fixture
+def daily_config():
+    return Config.from_str("""
+    calendars.daily = [
+      "*/*/*"
+    ]
+    """)
+
+
+@pytest.fixture
+def two_cal_config():
+    return Config.from_str("""
+    calendars.daily = [
+      "*/*/*"
+    ]
+    calendars.mondays = [
+      "every Monday */*"
+    ]
+    """)
 
 
 def test_family_split_single():
@@ -38,13 +70,13 @@ def test_family_split_double_data():
     assert jobs[1].tz == "America/Denver"
 
 
-def test_family_line_one_success_cal():
+def test_family_line_one_success_cal(two_cal_config):
     family_str = """start="0214", tz = "GMT", calendar="mondays", queue="main", email="a@b.c"
     foo
     bar
     baz
     """
-    fam = Family.parse(family_str)
+    fam = Family.parse(family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
@@ -54,11 +86,11 @@ def test_family_line_one_success_cal():
     assert fam.calendar_or_days.calendar_name == 'mondays'
 
 
-def test_family_line_one_success_days():
+def test_family_line_one_success_days(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c", days=["Mon", "Wed", "Fri"]
 
     """
-    fam = Family.parse(family_str)
+    fam = Family.parse(family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
@@ -71,35 +103,35 @@ def test_family_line_one_success_days():
     assert 'Fri' in fam.calendar_or_days.days
 
 
-def test_family_line_one_success_no_cal_days():
+def test_family_line_one_success_no_cal_days(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     """
-    fam = Family.parse(family_str)
+    fam = Family.parse(family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
     assert fam.queue == 'main'
     assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Calendar)
-    assert fam.calendar_or_days.calendar_name == 'daily'
+    assert isinstance(fam.calendar_or_days, Days)
+    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 
-def test_full_family_line_one_forest():
+def test_full_family_line_one_forest(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     J1() J2()
       J3()
     J4() J5()
     """
-    fam = Family.parse(family_str)
+    fam = Family.parse(family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
     assert fam.queue == 'main'
     assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Calendar)
-    assert fam.calendar_or_days.calendar_name == 'daily'
+    assert isinstance(fam.calendar_or_days, Days)
+    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     assert len(fam.forests) == 1
     assert len(fam.forests[0].jobs) == 3
     assert len(fam.forests[0].jobs[0]) == 2
@@ -112,7 +144,7 @@ def test_full_family_line_one_forest():
     assert fam.forests[0].jobs[2][1].job_name == 'J5'
 
 
-def test_full_family_line_one_forest_plus_one_empty():
+def test_full_family_line_one_forest_plus_one_empty(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     J1() J2() # bar
@@ -122,14 +154,14 @@ def test_full_family_line_one_forest_plus_one_empty():
     ---
     # foo
     """
-    fam = Family.parse(family_str)
+    fam = Family.parse(family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
     assert fam.queue == 'main'
     assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Calendar)
-    assert fam.calendar_or_days.calendar_name == 'daily'
+    assert isinstance(fam.calendar_or_days, Days)
+    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     assert len(fam.forests) == 1
     assert len(fam.forests[0].jobs) == 3
     assert len(fam.forests[0].jobs[0]) == 2
@@ -142,7 +174,7 @@ def test_full_family_line_one_forest_plus_one_empty():
     assert fam.forests[0].jobs[2][1].job_name == 'J5'
 
 
-def test_full_family_line_two_forests():
+def test_full_family_line_two_forests(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     J1() J2() # bar
@@ -153,14 +185,14 @@ def test_full_family_line_two_forests():
     # foo
     J6()  J7() J8() J9()
     """
-    fam = Family.parse(family_str)
+    fam = Family.parse(family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
     assert fam.queue == 'main'
     assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Calendar)
-    assert fam.calendar_or_days.calendar_name == 'daily'
+    assert isinstance(fam.calendar_or_days, Days)
+    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     assert len(fam.forests) == 2
     assert len(fam.forests[0].jobs) == 3
     assert len(fam.forests[0].jobs[0]) == 2
@@ -179,7 +211,7 @@ def test_full_family_line_two_forests():
     assert fam.forests[1].jobs[0][3].job_name == 'J9'
 
 
-def test_full_family_line_two_forests_with_one_empty_one():
+def test_full_family_line_two_forests_with_one_empty_one(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     J1() J2() # bar
@@ -192,14 +224,14 @@ def test_full_family_line_two_forests_with_one_empty_one():
     # foo
     J6()  J7() J8() J9()
     """
-    fam = Family.parse(family_str)
+    fam = Family.parse(family_str, two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
     assert fam.queue == 'main'
     assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Calendar)
-    assert fam.calendar_or_days.calendar_name == 'daily'
+    assert isinstance(fam.calendar_or_days, Days)
+    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     assert len(fam.forests) == 2
     assert len(fam.forests[0].jobs) == 3
     assert len(fam.forests[0].jobs[0]) == 2
@@ -218,7 +250,7 @@ def test_full_family_line_two_forests_with_one_empty_one():
     assert fam.forests[1].jobs[0][3].job_name == 'J9'
 
 
-def test_full_family_line_three_forests():
+def test_full_family_line_three_forests(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     J1() J2() # bar
@@ -231,14 +263,14 @@ def test_full_family_line_three_forests():
      - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
      J10()
     """
-    fam = Family.parse(family_str)
+    fam = Family.parse(family_str, two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
     assert fam.queue == 'main'
     assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Calendar)
-    assert fam.calendar_or_days.calendar_name == 'daily'
+    assert isinstance(fam.calendar_or_days, Days)
+    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     assert len(fam.forests) == 3
     assert len(fam.forests[0].jobs) == 3
     assert len(fam.forests[0].jobs[0]) == 2

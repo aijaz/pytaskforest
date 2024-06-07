@@ -13,13 +13,16 @@ from .exceptions import (
     MSG_FAMILY_UNRECOGNIZED_PARAM,
     MSG_FAMILY_START_TIME_PARSING_FAILED,
     MSG_FAMILY_CAL_AND_DAYS,
+    MSG_FAMILY_UNKNOWN_CALENDAR,
 )
 from .parse_utils import parse_time, lower_true_false, simple_type
+from .config import Config
 
 
 @define
 class Calendar:
     calendar_name: str
+    rules: [str] = field(default=[])
 
 
 @define
@@ -43,7 +46,7 @@ class Family:
     comment: str | None = field(default=None)
 
     @classmethod
-    def parse(cls, family_str: str):
+    def parse(cls, family_str: str, config: Config):
         fam = cls(
             start_time_hr=0,
             start_time_min=0,
@@ -79,11 +82,19 @@ class Family:
         fam.comment = d.get('comment')
 
         if d.get('calendar'):
-            fam.calendar_or_days = Calendar(d['calendar'])
+            print(f"{config=}")
+            print(f"{config['calendars']=}")
+            calendar_name = d['calendar']
+            try:
+                rules = config['calendars'][calendar_name]
+            except KeyError as e:
+                raise PyTaskforestParseException(f"{MSG_FAMILY_UNKNOWN_CALENDAR} {calendar_name}") from e
+
+            fam.calendar_or_days = Calendar(calendar_name, rules=rules)
         elif d.get('days'):
             fam.calendar_or_days = Days(days=d['days'])
         else:
-            fam.calendar_or_days = Calendar('daily')
+            fam.calendar_or_days = Days(days=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
 
         # parse the rest of the lines
         fam.forests = [Forest(jobs=[])]
