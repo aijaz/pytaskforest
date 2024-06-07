@@ -50,12 +50,12 @@ class Calendar:
             "last": -1,
             "every": 0,
         }
-        if components[0] in offsets:
+        if components[0].lower() in offsets:
             if len(components) < 2:
                 raise PyTaskforestParseException(f"{MSG_CALENDAR_DANGLING_OFFSET} {components[0]}")
 
-            nth = offsets[components[0]]
-            if components[1] == 'last':
+            nth = offsets[components[0].lower()]
+            if components[1].lower() == 'last':
                 nth = nth * -1 if nth > 0 else -1
                 del (components[1])  # get rid of 'last'
 
