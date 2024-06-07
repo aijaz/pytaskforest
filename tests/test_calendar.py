@@ -22,6 +22,12 @@ cal_params = [
 
     ('first_fri_202406',       (2024, 6, 7, True, ['+ first fri 2024/06'])),
     ('first_fri_202406',       (2024, 6, 7, True, ['first fri 2024/06'])),
+    ('first_fri_202406',       (2024, 6, 6, False, ['first fri 2024/06'])),
+
+    ('every_day_but_f_fri',    (2024, 6, 7, False, ['+ */*/*', '- first fri 2024/06'])),
+    ('every_day_but_f_fri',    (2024, 6, 7, False, ['+ */*/*', '- first fri 2024/*'])),
+    ('every_day_but_f_fri_7',  (2024, 6, 7, True, ['+ */*/*', '- first fri 2024/*', '*/*/7'])),
+
     ]
 
 
