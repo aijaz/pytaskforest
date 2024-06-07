@@ -1,7 +1,9 @@
 import pytest
 
 from app.model.forest import Forest
-from app.model.family import Family, Calendar, Days
+from app.model.family import Family
+from app.model.days import Days
+from app.model.calendar import Calendar
 from app.model.job import Job
 from app.model.config import Config
 

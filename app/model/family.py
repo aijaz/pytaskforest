@@ -17,17 +17,8 @@ from .exceptions import (
 )
 from .parse_utils import parse_time, lower_true_false, simple_type
 from .config import Config
-
-
-@define
-class Calendar:
-    calendar_name: str
-    rules: [str] = field(default=[])
-
-
-@define
-class Days:
-    days: [str]
+from .calendar import Calendar
+from .days import Days
 
 
 @define
