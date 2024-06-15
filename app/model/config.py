@@ -31,6 +31,7 @@ class Config():
     num_retries: int = field(default=1)
     retry_sleep: int = field(default=300)
     web_hook: str = field(default=None)
+    hook_auth: str = field(default=None)
 
     def __getitem__(self, item):
         return self.d[item]
@@ -61,6 +62,7 @@ class Config():
             obj.num_retries = obj.set_if_not_none('num_retries', obj.num_retries)
             obj.retry_sleep = obj.set_if_not_none('retry_sleep', obj.retry_sleep)
             obj.web_hook = obj.set_if_not_none('web_hook', obj.web_hook)
+            obj.hook_auth = obj.set_if_not_none('hook_auth', obj.hook_auth)
 
             return obj
         except tomlkit.exceptions.UnexpectedCharError as e:
