@@ -1,5 +1,4 @@
 from functools import wraps
-from urllib.parse import urlparse
 
 from flask import (
     Blueprint,
@@ -48,4 +47,4 @@ def needs_admin_community(f):
     return wrapped
 
 
-from . import admin_views, download, auth
+from . import admin_views, auth

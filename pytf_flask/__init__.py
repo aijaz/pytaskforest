@@ -17,8 +17,8 @@ def create_app(config_name):
     app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
     # attach routes and error pages here
-    from .main import main as main_blueprint
-    app.register_blueprint(main_blueprint)
+    from .public import public as public_blueprint
+    app.register_blueprint(public_blueprint)
 
     #
     from .admin import admin as admin_blueprint
