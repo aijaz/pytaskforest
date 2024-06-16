@@ -18,6 +18,7 @@ from .parse_utils import parse_time, lower_true_false, simple_type
 @define
 class Job:
     job_name: str
+    script: str | None = field(default=None)
     start_time_hr: int | None = field(default=None)
     start_time_min: int | None = field(default=None)
     tz: str | None = field(default=None)
@@ -41,7 +42,7 @@ class Job:
         j = cls(
             job_name=""
         )
-        pattern = re.compile('([0-9A-Za-z_]+)\((.*)\)')
+        pattern = re.compile('([0-9A-Za-z_]+)\\((.*)\\)')
         match = pattern.match(job_string)
         j.job_name = match[1]
 
