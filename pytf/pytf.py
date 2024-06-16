@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+
+import sys
+
 import click
 
 from model.config import Config
@@ -37,7 +41,54 @@ def pytf(context,
 @pytf.command()
 @click.pass_context
 def run(context):
-    pass
+    print(sys.path)
+
+
+@pytf.command()
+@click.argument('family')
+@click.argument('job')
+@click.pass_context
+def rerun(context, family, job):
+    config = context.obj['config']
+    click.echo(config)
+    click.echo(family)
+    click.echo(job)
+
+
+@pytf.command()
+@click.argument('--family')
+@click.argument('--job')
+@click.argument('--error_code', type=click.IntRange(min=0, max=255))
+@click.pass_context
+def mark(context, family, job, error_code):
+    config = context.obj['config']
+    click.echo(config)
+    click.echo(family)
+    click.echo(job)
+    click.echo(error_code)
+
+
+@pytf.command()
+@click.argument('--family')
+@click.argument('--job')
+@click.pass_context
+def hold(context, family, job):
+    config = context.obj['config']
+    click.echo(config)
+    click.echo(family)
+    click.echo(job)
+
+
+@pytf.command()
+@click.argument('--family')
+@click.argument('--job')
+@click.pass_context
+def release_hold(context, family, job):
+    config = context.obj['config']
+    click.echo(config)
+    click.echo(family)
+    click.echo(job)
+
 
 if __name__ == '__main__':
     pytf(obj={}, auto_envvar_prefix='PYTF')
