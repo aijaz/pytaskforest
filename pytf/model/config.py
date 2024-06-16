@@ -5,6 +5,10 @@ import tomlkit.exceptions
 from attrs import define, field
 
 from .token import Token
+from ..model.exceptions import (
+    PyTaskforestParseException,
+    MSG_CONFIG_PARSING_FAILED
+)
 
 
 @define
@@ -65,4 +69,5 @@ class Config():
 
             return obj
         except tomlkit.exceptions.UnexpectedCharError as e:
-            return cls("")
+            # return cls("")
+            raise PyTaskforestParseException(MSG_CONFIG_PARSING_FAILED) from e
