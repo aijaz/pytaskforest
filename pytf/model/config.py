@@ -4,11 +4,11 @@ import tomlkit
 import tomlkit.exceptions
 from attrs import define, field
 
-from .token import Token
-from ..model.exceptions import (
+from .exceptions import (
     PyTaskforestParseException,
     MSG_CONFIG_PARSING_FAILED
 )
+from .token import Token
 
 
 @define

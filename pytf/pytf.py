@@ -1,6 +1,6 @@
 import click
 
-from ..model.config import Config
+from model.config import Config
 
 
 @click.group()
