@@ -33,6 +33,6 @@ def fib_task(n):
     return fib(n)
 
 
-# @app.task(name='celery.fib_dp_task')
+# @pytf.task(name='celery.fib_dp_task')
 # def fib_dp_task(n):
 #     return fib_dp(n)

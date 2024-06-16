@@ -6,8 +6,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 # setup template folder and static folder
 class Config:
-    TEMPLATE_FOLDER = "app/templates"
-    STATIC_FOLDER = "app/static"
 
     @staticmethod
     def init_app(app):
