@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-import sys
-
 import click
 
 from pytf.config import Config
-from pytf.run import run as pytf_run
+from pytf.main import main as pytf_main
 from pytf.rerun import rerun as pytf_rerun
 from pytf.mark import mark as pytf_mark
 from pytf.hold import hold as pytf_hold
@@ -47,7 +45,7 @@ def pytf(context,
 @click.pass_context
 def run(context):
     config = context.obj['config']
-    pytf_run(config)
+    pytf_main(config)
 
 
 @pytf.command()
