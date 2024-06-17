@@ -5,6 +5,11 @@ import sys
 import click
 
 from pytf.config import Config
+from pytf.run import run as pytf_run
+from pytf.rerun import rerun as pytf_rerun
+from pytf.mark import mark as pytf_mark
+from pytf.hold import hold as pytf_hold
+from pytf.release_hold import release_hold as pytf_release_hold
 
 
 @click.group()
@@ -41,7 +46,8 @@ def pytf(context,
 @pytf.command()
 @click.pass_context
 def run(context):
-    print(sys.path)
+    config = context.obj['config']
+    pytf_run(config)
 
 
 @pytf.command()
@@ -50,9 +56,7 @@ def run(context):
 @click.pass_context
 def rerun(context, family, job):
     config = context.obj['config']
-    click.echo(config)
-    click.echo(family)
-    click.echo(job)
+    pytf_rerun(config, family, job)
 
 
 @pytf.command()
@@ -62,10 +66,7 @@ def rerun(context, family, job):
 @click.pass_context
 def mark(context, family, job, error_code):
     config = context.obj['config']
-    click.echo(config)
-    click.echo(family)
-    click.echo(job)
-    click.echo(error_code)
+    pytf_mark(config, family, job, error_code)
 
 
 @pytf.command()
@@ -74,9 +75,7 @@ def mark(context, family, job, error_code):
 @click.pass_context
 def hold(context, family, job):
     config = context.obj['config']
-    click.echo(config)
-    click.echo(family)
-    click.echo(job)
+    pytf_hold(config, family, job)
 
 
 @pytf.command()
@@ -85,9 +84,7 @@ def hold(context, family, job):
 @click.pass_context
 def release_hold(context, family, job):
     config = context.obj['config']
-    click.echo(config)
-    click.echo(family)
-    click.echo(job)
+    pytf_release_hold(config, family, job)
 
 
 if __name__ == '__main__':
