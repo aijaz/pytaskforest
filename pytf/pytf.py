@@ -43,7 +43,7 @@ def pytf(context,
 
 @pytf.command()
 @click.pass_context
-def run(context):
+def main(context):
     config = context.obj['config']
     pytf_main(config)
 
