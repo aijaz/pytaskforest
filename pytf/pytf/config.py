@@ -23,7 +23,6 @@ class Config():
     run_wrapper: str | None = field(default=None)
 
     calendar_dir: str | None = field(default=None)
-    wait_time: int | None = field(default=60)
     end_time_hr: int | None = field(default=23)
     end_time_min: int | None = field(default=55)
     once_only: bool = field(default=False)
@@ -55,7 +54,6 @@ class Config():
             obj.job_dir = obj.set_if_not_none('job_dir', obj.job_dir)
             obj.instructions_dir = obj.set_if_not_none('instructions_dir', obj.instructions_dir)
             obj.run_wrapper = obj.set_if_not_none('run_wrapper', obj.run_wrapper)
-            obj.wait_time = obj.set_if_not_none('wait_time', obj.wait_time)
             obj.end_time_hr = obj.set_if_not_none('end_time_hr', obj.end_time_hr)
             obj.end_time_min = obj.set_if_not_none('end_time_min', obj.end_time_min)
             obj.collapse = obj.set_if_not_none('collapse', obj.collapse)
