@@ -1,14 +1,25 @@
 import datetime
-from time import sleep
+import os
 
 import pytz
 
 from .config import Config
-from mockdatetime import MockDateTime, MockSleep
+from .mockdatetime import MockDateTime, MockSleep
+from .dirs import (
+    copy_files_from_dir_to_dir,
+    dated_dir,
+    does_dir_exist,
+    make_dir,
+)
 
 
-def main(config:Config):
-    now:datetime.datetime = MockDateTime.now(tz=pytz.timezone(config.primary_tz))
+def main(config: Config):
+    now: datetime.datetime = MockDateTime.now(tz=pytz.timezone(config.primary_tz))
+    todays_family_dir = dated_dir(os.path.join(config.family_dir, "{YYYY}-{MM}-{DD}"), now)
+    if not does_dir_exist(todays_family_dir):
+        make_dir(todays_family_dir)
+        copy_files_from_dir_to_dir(config.family_dir, todays_family_dir)
+        
     end_time = datetime.datetime(year=now.year,
                                  month=now.month,
                                  day=now.day,
