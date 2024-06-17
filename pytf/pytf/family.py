@@ -23,6 +23,7 @@ from .days import Days
 
 @define
 class Family:
+    name: str
     start_time_hr: int
     start_time_min: int
     tz: str
@@ -37,8 +38,9 @@ class Family:
     comment: str | None = field(default=None)
 
     @classmethod
-    def parse(cls, family_str: str, config: Config):
+    def parse(cls, family_name: str, family_str: str, config: Config):
         fam = cls(
+            name=family_name,
             start_time_hr=0,
             start_time_min=0,
             tz=''

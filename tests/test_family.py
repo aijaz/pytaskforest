@@ -78,12 +78,13 @@ def test_family_line_one_success_cal(two_cal_config):
     bar
     baz
     """
-    fam = Family.parse(family_str, config=two_cal_config)
+    fam = Family.parse("family", family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
     assert fam.queue == 'main'
     assert fam.email == 'a@b.c'
+    assert fam.name == "family"
     assert isinstance(fam.calendar_or_days, Calendar)
     assert fam.calendar_or_days.calendar_name == 'mondays'
 
@@ -92,10 +93,11 @@ def test_family_line_one_success_days(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c", days=["Mon", "Wed", "Fri"]
 
     """
-    fam = Family.parse(family_str, config=two_cal_config)
+    fam = Family.parse("name", family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
+    assert fam.name == "name"
     assert fam.queue == 'main'
     assert fam.email == 'a@b.c'
     assert isinstance(fam.calendar_or_days, Days)
@@ -109,7 +111,7 @@ def test_family_line_one_success_no_cal_days(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     """
-    fam = Family.parse(family_str, config=two_cal_config)
+    fam = Family.parse("name", family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
@@ -126,7 +128,7 @@ def test_full_family_line_one_forest(two_cal_config):
       J3()
     J4() J5()
     """
-    fam = Family.parse(family_str, config=two_cal_config)
+    fam = Family.parse("name", family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
@@ -156,7 +158,7 @@ def test_full_family_line_one_forest_plus_one_empty(two_cal_config):
     ---
     # foo
     """
-    fam = Family.parse(family_str, config=two_cal_config)
+    fam = Family.parse("name", family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
@@ -187,7 +189,7 @@ def test_full_family_line_two_forests(two_cal_config):
     # foo
     J6()  J7() J8() J9()
     """
-    fam = Family.parse(family_str, config=two_cal_config)
+    fam = Family.parse("name", family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
@@ -226,7 +228,7 @@ def test_full_family_line_two_forests_with_one_empty_one(two_cal_config):
     # foo
     J6()  J7() J8() J9()
     """
-    fam = Family.parse(family_str, two_cal_config)
+    fam = Family.parse("name", family_str, two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
@@ -265,7 +267,7 @@ def test_full_family_line_three_forests(two_cal_config):
      - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
      J10()
     """
-    fam = Family.parse(family_str, two_cal_config)
+    fam = Family.parse("name", family_str, two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'

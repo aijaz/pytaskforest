@@ -29,7 +29,7 @@ class Config():
     collapse: bool = field(default=True)
     chained: bool = field(default=True)
     log_level: int | None = field(default=logging.WARN)
-    ignore_regex: [str] = field(default=["~$", ".bak$", "\\$$"])
+    ignore_regex: [str] = field(default=[".*~$", ".*\\.bak$", ".*\\$$"])
     tokens: [Token] = field(default=None)
     num_retries: int = field(default=1)
     retry_sleep: int = field(default=300)
