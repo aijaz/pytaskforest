@@ -4,7 +4,7 @@ import pytz
 
 from pytf.pytf.mockdatetime import MockDateTime
 from pytf.pytf.dirs import dated_dir
-from pytf.pytf.main import make_family_dir_if_necessary
+from pytf.pytf.main import make_family_dir_if_necessary, get_families_from_dir
 from pytf.pytf.config import Config
 
 
@@ -17,7 +17,7 @@ def no_odd_config():
     calendars.mondays = [
       "every Monday */*"
     ]
-    ignore_regexes = [
+    ignore_regex = [
       ".*[13579]$"
     ]
     """)
@@ -32,7 +32,7 @@ def test_make_family_dir_if_necessary(tmp_path, no_odd_config):
     # make family files
     for f in ('fa', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'fb'):
         with open(os.path.join(tmp_path, f), "w") as fp:
-            fp.write('queue: "foo"')
+            fp.write('queue = "foo"')
 
     files = os.listdir(tmp_path)
     assert(len(files) == 9)
@@ -42,3 +42,5 @@ def test_make_family_dir_if_necessary(tmp_path, no_odd_config):
     files = os.listdir(todays_family_dir)
     assert(len(files) == 9)
 
+    families = get_families_from_dir(family_dir=todays_family_dir, config=no_odd_config)
+    assert(len(families) == 5)
