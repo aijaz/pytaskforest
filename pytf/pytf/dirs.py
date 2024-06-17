@@ -6,12 +6,13 @@ import shutil
 
 
 def dated_dir(dir_name: str, timestamp:datetime.datetime) -> str:
-    resolution_hash = { "YYYY": timestamp.year,
-                        "MM": timestamp.month,
-                        "DD": timestamp.day,
-                        "hh": timestamp.hour,
-                        "mm": timestamp.month,
-                        "ss": timestamp.second}
+    resolution_hash = { "YYYY": f"{timestamp.year}",
+                        "MM":   f"{timestamp.month:02}",
+                        "DD":   f"{timestamp.day:02}",
+                        "hh":   f"{timestamp.hour:02}",
+                        "mm":   f"{timestamp.month:02}",
+                        "ss":   f"{timestamp.second:02}",
+                        }
     return dir_name.format(**resolution_hash)
 
 

@@ -11,11 +11,23 @@ class MockDateTime:
         cls._mock_now = mock_now
 
     @classmethod
+    def set_mock(cls,
+                 YYYY: int,
+                 MM: int,
+                 DD: int,
+                 h: int,
+                 m: int,
+                 s: int,
+                 tz
+                 ) -> None:
+        cls._mock_now = datetime(YYYY, MM, DD, h, m, s, 0, tz)
+
+    @classmethod
     def reset_mock_now(cls) -> None:
         cls._mock_now = None
 
     @classmethod
-    def now(cls, tz) -> datetime:
+    def now(cls, tz=None) -> datetime:
         return cls._mock_now if cls._mock_now is not None else datetime.now(tz=tz)
 
 
