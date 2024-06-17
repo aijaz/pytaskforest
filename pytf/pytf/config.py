@@ -36,6 +36,7 @@ class Config():
     retry_sleep: int = field(default=300)
     web_hook: str = field(default=None)
     hook_auth: str = field(default=None)
+    primary_tz: str = field(default="UTC")
 
     def __getitem__(self, item):
         return self.d[item]
@@ -66,8 +67,8 @@ class Config():
             obj.retry_sleep = obj.set_if_not_none('retry_sleep', obj.retry_sleep)
             obj.web_hook = obj.set_if_not_none('web_hook', obj.web_hook)
             obj.hook_auth = obj.set_if_not_none('hook_auth', obj.hook_auth)
+            obj.primary_tz = obj.set_if_not_none('primary_tz', obj.primary_tz)
 
             return obj
         except tomlkit.exceptions.UnexpectedCharError as e:
-            # return cls("")
             raise PyTaskforestParseException(MSG_CONFIG_PARSING_FAILED) from e
