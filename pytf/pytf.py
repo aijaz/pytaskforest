@@ -4,7 +4,7 @@ import sys
 
 import click
 
-from model.config import Config
+from pytf.config import Config
 
 
 @click.group()

@@ -1,11 +1,11 @@
 import pytest
 
-from pytf.model.forest import Forest
-from pytf.model.family import Family
-from pytf.model.days import Days
-from pytf.model.calendar import Calendar
-from pytf.model.job import Job
-from pytf.model.config import Config
+from pytf.pytf.forest import Forest
+from pytf.pytf.family import Family
+from pytf.pytf.days import Days
+from pytf.pytf.calendar import Calendar
+from pytf.pytf.job import Job
+from pytf.pytf.config import Config
 
 @pytest.fixture
 def monday_config():
