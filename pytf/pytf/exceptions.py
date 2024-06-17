@@ -23,3 +23,8 @@ MSG_CALENDAR_OFFSET_AND_DATE = "Date of month not allowed when specifying day of
 MSG_CALENDAR_INVALID_DATE = "Invalid date:"
 
 MSG_CONFIG_PARSING_FAILED = "Failed to parse config file"
+MSG_CONFIG_MISSING_LOG_DIR = "Failed to parse config file - Missing log dir"
+MSG_CONFIG_MISSING_JOB_DIR = "Failed to parse config file - Missing job dir"
+MSG_CONFIG_MISSING_FAMILY_DIR = "Failed to parse config file - Missing family dir"
+MSG_CONFIG_MISSING_INSTRUCTIONS_DIR = "Failed to parse config file - Missing instructions dir"
+MSG_CONFIG_MISSING_RUN_WRAPPER = "Failed to parse config file - Missing run wrapper"

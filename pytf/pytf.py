@@ -3,6 +3,13 @@
 import click
 
 from pytf.config import Config
+from pytf.exceptions import (PyTaskforestParseException,
+                             MSG_CONFIG_MISSING_INSTRUCTIONS_DIR,
+                             MSG_CONFIG_MISSING_LOG_DIR,
+                             MSG_CONFIG_MISSING_FAMILY_DIR,
+                             MSG_CONFIG_MISSING_JOB_DIR,
+                             MSG_CONFIG_MISSING_RUN_WRAPPER,
+                             )
 from pytf.main import main as pytf_main
 from pytf.rerun import rerun as pytf_rerun
 from pytf.mark import mark as pytf_mark
@@ -39,6 +46,17 @@ def pytf(context,
     config.job_dir = job_dir if job_dir is not None else config.job_dir
     config.instructions_dir = instructions_dir if instructions_dir is not None else config.instructions_dir
     config.run_wrapper = run_wrapper if run_wrapper is not None else config.run_wrapper
+
+    if config.log_dir is None:
+        raise PyTaskforestParseException(MSG_CONFIG_MISSING_LOG_DIR)
+    if config.family_dir is None:
+        raise PyTaskforestParseException(MSG_CONFIG_MISSING_FAMILY_DIR)
+    if config.log_dir is None:
+        raise PyTaskforestParseException(MSG_CONFIG_MISSING_LOG_DIR)
+    if config.instructions_dir is None:
+        raise PyTaskforestParseException(MSG_CONFIG_MISSING_INSTRUCTIONS_DIR)
+    if config.run_wrapper is None:
+        raise PyTaskforestParseException(MSG_CONFIG_MISSING_RUN_WRAPPER)
 
 
 @pytf.command()
