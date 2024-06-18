@@ -26,9 +26,9 @@ def no_odd_config():
 
 def test_make_family_dir_if_necessary(tmp_path, no_odd_config):
     MockDateTime.set_mock(2024, 6, 3, 1, 2, 3, pytz.timezone('America/Denver'))
-    todays_family_dir = dated_dir(os.path.join(tmp_path, "{YYYY}-{MM}-{DD}"), MockDateTime.now())
+    todays_family_dir = dated_dir(os.path.join(tmp_path, "{YYYY}{MM}{DD}"), MockDateTime.now())
     no_odd_config.family_dir = tmp_path
-    assert(todays_family_dir == os.path.join(tmp_path, "2024-06-03"))
+    assert(todays_family_dir == os.path.join(tmp_path, "20240603"))
     assert not os.path.exists(todays_family_dir)
 
     # make family files

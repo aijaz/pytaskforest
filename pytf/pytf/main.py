@@ -17,10 +17,10 @@ from .family import Family
 
 def main(config: Config):
     now: datetime.datetime = MockDateTime.now(tz=pytz.timezone(config.primary_tz))
-    todays_family_dir = dated_dir(os.path.join(config.family_dir, "{YYYY}-{MM}-{DD}"), now)
+    todays_family_dir = dated_dir(os.path.join(config.family_dir, "{YYYY}{MM}{DD}"), now)
     make_family_dir_if_necessary(config, todays_family_dir)
     families = get_families_from_dir(family_dir=todays_family_dir, config=config)
-    todays_log_dir = dated_dir(os.path.join(config.log_dir, "{YYYY}-{MM}-{DD}"), now)
+    todays_log_dir = dated_dir(os.path.join(config.log_dir, "{YYYY}{MM}{DD}"), now)
     make_dir_if_necessary(todays_log_dir)
     config.todays_log_dir = todays_log_dir
     config.todays_family_dir = todays_family_dir
