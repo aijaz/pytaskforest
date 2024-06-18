@@ -21,6 +21,8 @@ class Config():
     job_dir: str | None = field(default=None)
     instructions_dir: str | None = field(default=None)
     run_wrapper: str | None = field(default=None)
+    todays_log_dir: str | None = field(default=None)
+    todays_family_dir: str | None = field(default=None)
 
     calendar_dir: str | None = field(default=None)
     end_time_hr: int | None = field(default=23)

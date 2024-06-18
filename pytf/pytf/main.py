@@ -20,6 +20,10 @@ def main(config: Config):
     todays_family_dir = dated_dir(os.path.join(config.family_dir, "{YYYY}-{MM}-{DD}"), now)
     make_family_dir_if_necessary(config, todays_family_dir)
     families = get_families_from_dir(family_dir=todays_family_dir, config=config)
+    todays_log_dir = dated_dir(os.path.join(config.log_dir, "{YYYY}-{MM}-{DD}"), now)
+    make_dir_if_necessary(todays_log_dir)
+    config.todays_log_dir = todays_log_dir
+    config.todays_family_dir = todays_family_dir
 
     end_time = datetime.datetime(year=now.year,
                                  month=now.month,
@@ -36,8 +40,14 @@ def make_family_dir_if_necessary(config, todays_family_dir):
         copy_files_from_dir_to_dir(config.family_dir, todays_family_dir)
 
 
+def make_dir_if_necessary(the_dir):
+    if not does_dir_exist(the_dir):
+        make_dir(the_dir)
+
+
 def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
     files = text_files_in_dir(family_dir, config.ignore_regex)
+    files.sort(key=lambda tup: tup[0])
     return [Family.parse(family_name=item[0], family_str=item[1], config=config) for item in files]
 
 

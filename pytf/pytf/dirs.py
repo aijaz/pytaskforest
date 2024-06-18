@@ -49,7 +49,3 @@ def copy_files_from_dir_to_dir(src: str, dest: str):
         shutil.copyfile(os.path.join(src, file.name), os.path.join(dest, file.name))
 
 
-if __name__ == '__main__':
-    copy_files_from_dir_to_dir('/tmp/src', '/tmp/dest')
-    result = text_files_in_dir("/tmp/dest", [".*2$"])
-    print(result)
