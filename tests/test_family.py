@@ -294,3 +294,56 @@ def test_full_family_line_three_forests(two_cal_config):
     assert len(fam.forests[2].jobs) == 1
     assert len(fam.forests[2].jobs[0]) == 1
     assert fam.forests[2].jobs[0][0].job_name == 'J10'
+
+
+def test_external_deps(two_cal_config):
+    family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
+
+    F2::JA()
+    
+    J1() J2() # bar
+    # foo
+      J3() # foo
+    J4() J5()
+    ---
+    # foo
+    J6()  J7() J8() J9()
+     - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
+       F3::JB() F4::JC() 
+     J10()
+    """
+    fam = Family.parse("name", family_str, two_cal_config)
+    assert fam.start_time_hr == 2
+    assert fam.start_time_min == 14
+    assert fam.tz == 'GMT'
+    assert fam.queue == 'main'
+    assert fam.email == 'a@b.c'
+    assert isinstance(fam.calendar_or_days, Days)
+    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    assert len(fam.forests) == 3
+    assert len(fam.forests[0].jobs) == 4
+    assert len(fam.forests[0].jobs[0]) == 1
+    assert len(fam.forests[0].jobs[1]) == 2
+    assert len(fam.forests[0].jobs[2]) == 1
+    assert len(fam.forests[0].jobs[3]) == 2
+    assert fam.forests[0].jobs[0][0].family_name == 'F2'
+    assert fam.forests[0].jobs[0][0].job_name == 'JA'
+    assert fam.forests[0].jobs[1][0].job_name == 'J1'
+    assert fam.forests[0].jobs[1][1].job_name == 'J2'
+    assert fam.forests[0].jobs[2][0].job_name == 'J3'
+    assert fam.forests[0].jobs[3][0].job_name == 'J4'
+    assert fam.forests[0].jobs[3][1].job_name == 'J5'
+    assert len(fam.forests[1].jobs) == 1
+    assert len(fam.forests[1].jobs[0]) == 4
+    assert fam.forests[1].jobs[0][0].job_name == 'J6'
+    assert fam.forests[1].jobs[0][1].job_name == 'J7'
+    assert fam.forests[1].jobs[0][2].job_name == 'J8'
+    assert fam.forests[1].jobs[0][3].job_name == 'J9'
+    assert len(fam.forests[2].jobs) == 2
+    assert len(fam.forests[2].jobs[0]) == 2
+    assert len(fam.forests[2].jobs[1]) == 1
+    assert fam.forests[2].jobs[0][0].family_name == 'F3'
+    assert fam.forests[2].jobs[0][0].job_name == 'JB'
+    assert fam.forests[2].jobs[0][1].family_name == 'F4'
+    assert fam.forests[2].jobs[0][1].job_name == 'JC'
+    assert fam.forests[2].jobs[1][0].job_name == 'J10'

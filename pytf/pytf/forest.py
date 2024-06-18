@@ -21,4 +21,6 @@ class Forest:
 
         pattern = re.compile(r'([^(]+\([^)]*\))')
         job_strs = [i.strip() for i in re.findall(pattern, line)]
-        return [Job.parse(job_str) for job_str in job_strs]
+        return [ExternalDependency.parse(job_str) if '::' in job_str else Job.parse(job_str) for job_str in job_strs]
+
+
