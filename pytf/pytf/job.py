@@ -1,4 +1,3 @@
-from enum import Enum
 import re
 
 import tomlkit
@@ -15,15 +14,7 @@ from .exceptions import (PyTaskforestParseException,
                          )
 from .parse_utils import parse_time, lower_true_false, simple_type
 from pytf.pytf.dependency import Dependency
-
-
-class JobStatus(Enum):
-    WAITING = 1
-    READY = 2
-    TOKEN_WAIT = 3
-    RUNNING = 4
-    SUCCESS = 5
-    FAILURE = 6
+from pytf.pytf.job_status import JobStatus
 
 
 @define

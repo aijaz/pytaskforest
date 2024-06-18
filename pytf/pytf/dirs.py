@@ -68,3 +68,6 @@ def copy_files_from_dir_to_dir(src: str, dest: str):
         shutil.copyfile(os.path.join(src, file.name), os.path.join(dest, file.name))
 
 
+def make_dir_if_necessary(the_dir):
+    if not does_dir_exist(the_dir):
+        make_dir(the_dir)
