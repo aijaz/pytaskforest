@@ -24,3 +24,5 @@ class Forest:
         return [ExternalDependency.parse(job_str) if '::' in job_str else Job.parse(job_str) for job_str in job_strs]
 
 
+    # @classmethod
+    # def all_jobs

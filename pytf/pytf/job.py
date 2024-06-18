@@ -14,6 +14,7 @@ from .exceptions import (PyTaskforestParseException,
                          MSG_INVALID_TYPE,
                          )
 from .parse_utils import parse_time, lower_true_false, simple_type
+from pytf.pytf.dependency import Dependency
 
 
 class JobStatus(Enum):
@@ -52,6 +53,8 @@ class Job:
     family_name: str = field(default="")
     base_name: str = field(default="")
     has_actual_start: bool = field(default=False)
+    status: JobStatus = field(default=JobStatus.WAITING)
+    dependencies = [Dependency]
 
 
 

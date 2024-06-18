@@ -2,6 +2,8 @@ import time
 from datetime import datetime
 from typing import Optional
 
+import pytz
+
 
 class MockDateTime:
     _mock_now: Optional[datetime] = None
@@ -18,17 +20,17 @@ class MockDateTime:
                  h: int,
                  m: int,
                  s: int,
-                 tz
+                 tz: str
                  ) -> None:
-        cls._mock_now = datetime(YYYY, MM, DD, h, m, s, 0, tz)
+        cls._mock_now = datetime(YYYY, MM, DD, h, m, s, 0, pytz.timezone(tz))
 
     @classmethod
     def reset_mock_now(cls) -> None:
         cls._mock_now = None
 
     @classmethod
-    def now(cls, tz=None) -> datetime:
-        return cls._mock_now if cls._mock_now is not None else datetime.now(tz=tz)
+    def now(cls, tz: str="UTC") -> datetime:
+        return cls._mock_now.astimezone(tz=pytz.timezone(tz)) if cls._mock_now is not None else datetime.now(tz=pytz.timezone(tz))
 
 
 class MockSleep:

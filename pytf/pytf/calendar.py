@@ -2,7 +2,6 @@ import datetime
 import calendar
 
 from attrs import define, field
-import pytz
 
 from .exceptions import (
     PyTaskforestParseException,

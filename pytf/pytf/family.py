@@ -78,8 +78,6 @@ class Family:
         fam.comment = d.get('comment')
 
         if d.get('calendar'):
-            print(f"{config=}")
-            print(f"{config['calendars']=}")
             calendar_name = d['calendar']
             try:
                 rules = config['calendars'][calendar_name]
