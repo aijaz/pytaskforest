@@ -22,7 +22,7 @@ class MockDateTime:
                  s: int,
                  tz: str
                  ) -> None:
-        cls._mock_now = datetime(YYYY, MM, DD, h, m, s, 0, pytz.timezone(tz))
+        cls._mock_now = pytz.timezone(tz).localize(datetime(YYYY, MM, DD, h, m, s, 0))
 
     @classmethod
     def reset_mock_now(cls) -> None:
@@ -30,7 +30,7 @@ class MockDateTime:
 
     @classmethod
     def now(cls, tz: str="UTC") -> datetime:
-        return cls._mock_now.astimezone(tz=pytz.timezone(tz)) if cls._mock_now is not None else datetime.now(tz=pytz.timezone(tz))
+        return cls._mock_now.astimezone(pytz.timezone(tz)) if cls._mock_now is not None else pytz.timezone(tz).localize(datetime.now)
 
 
 class MockSleep:

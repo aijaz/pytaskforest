@@ -27,7 +27,7 @@ class TimeDependency(Dependency):
 
     def met(self) -> bool:
         now = MockDateTime.now(self.tz)
-        then = datetime.datetime(now.year, now.month, now.day, self.hh, self.mm, 0, 0, pytz.timezone(self.tz))
+        then = pytz.timezone(self.tz).localize(datetime.datetime(now.year, now.month, now.day, self.hh, self.mm, 0, 0))
         return then <= now
 
 

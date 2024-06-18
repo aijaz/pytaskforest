@@ -28,12 +28,11 @@ def main(config: Config):
     config.todays_log_dir = todays_log_dir
     config.todays_family_dir = todays_family_dir
 
-    end_time = datetime.datetime(year=now.year,
-                                 month=now.month,
-                                 day=now.day,
-                                 hour=config.end_time_hr,
-                                 minute=config.end_time_min,
-                                 tzinfo=pytz.timezone(config.primary_tz))
+    end_time = pytz.timezone(config.primary_tz).localize(datetime.datetime(year=now.year,
+                                                                           month=now.month,
+                                                                           day=now.day,
+                                                                           hour=config.end_time_hr,
+                                                                           minute=config.end_time_min))
     run_main_loop_until_end(config, end_time, main_function)
 
 
@@ -52,7 +51,7 @@ def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
 def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run):
     while True:
         # primary_tz is used for the start and end time of the main loop
-        now: datetime.datetime = MockDateTime.now(tz=config.primary_tz)
+        now: datetime.datetime = MockDateTime.now(config.primary_tz)
         if now >= end_time:
             break
 
