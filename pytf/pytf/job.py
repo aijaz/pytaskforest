@@ -1,3 +1,4 @@
+from enum import Enum
 import re
 
 import tomlkit
@@ -13,6 +14,15 @@ from .exceptions import (PyTaskforestParseException,
                          MSG_INVALID_TYPE,
                          )
 from .parse_utils import parse_time, lower_true_false, simple_type
+
+
+class JobStatus(Enum):
+    WAITING = 1
+    READY = 2
+    TOKEN_WAIT = 3
+    RUNNING = 4
+    SUCCESS = 5
+    FAILURE = 6
 
 
 @define
@@ -36,6 +46,14 @@ class Job:
     no_retry_email: bool | None = field(default=None)
     no_retry_success_email: bool | None = field(default=None)
     comment: str | None = field(default=None)
+
+    # dynamic fields
+    start_time_met_today: bool = field(default=False)
+    family_name: str = field(default="")
+    base_name: str = field(default="")
+    has_actual_start: bool = field(default=False)
+
+
 
     @classmethod
     def parse(cls, job_string: str):

@@ -53,6 +53,7 @@ def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
 
 def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run, families: [Family]):
     while True:
+        # primary_tz is used for the start and end time of the main loop
         now: datetime.datetime = MockDateTime.now(tz=pytz.timezone(config.primary_tz))
         if now >= end_time:
             break

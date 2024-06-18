@@ -37,6 +37,9 @@ class Family:
     forests: [Forest] = field(default=None)
     comment: str | None = field(default=None)
 
+    # dynamic fields
+    start_time_met_today: bool = field(default=False)
+
     @classmethod
     def parse(cls, family_name: str, family_str: str, config: Config):
         fam = cls(
