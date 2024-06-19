@@ -21,6 +21,7 @@ from .config import Config
 from .calendar import Calendar
 from .days import Days
 from pytf.pytf.job import Job
+from .dirs import text_files_in_dir
 
 
 @define
@@ -196,3 +197,11 @@ class Family:
         for forest in self.forests:
             result.extend(forest.get_all_internal_jobs())
         return result
+
+
+def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
+    files = text_files_in_dir(family_dir, config.ignore_regex)
+    files.sort(key=lambda tup: tup[0])
+    return [Family.parse(family_name=item[0], family_str=item[1], config=config) for item in files]
+
+

@@ -6,6 +6,7 @@ from pytf.pytf.dirs import (
     todays_family_dir,
     dated_subdir,
 )
+from .family import get_families_from_dir
 from pytf.pytf.logs import get_logged_job_results
 from pytf.pytf.mockdatetime import MockDateTime
 
@@ -23,4 +24,4 @@ def status(config: Config, dt: datetime.datetime=None):
     logged_job_results = get_logged_job_results(log_dir_to_examine)
 
     # get all jobs from today's family_dir
-    # read log_dir
+    families = get_families_from_dir(config.todays_family_dir, config)

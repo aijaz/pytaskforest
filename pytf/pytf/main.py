@@ -11,9 +11,8 @@ from .dirs import (
     does_dir_exist,
     make_dir,
     make_dir_if_necessary,
-    text_files_in_dir,
 )
-from .family import Family
+from .family import Family, get_families_from_dir
 
 
 def main(config: Config):
@@ -40,12 +39,6 @@ def make_family_dir_if_necessary(config, todays_family_dir):
     if not does_dir_exist(todays_family_dir):
         make_dir(todays_family_dir)
         copy_files_from_dir_to_dir(config.family_dir, todays_family_dir)
-
-
-def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
-    files = text_files_in_dir(family_dir, config.ignore_regex)
-    files.sort(key=lambda tup: tup[0])
-    return [Family.parse(family_name=item[0], family_str=item[1], config=config) for item in files]
 
 
 def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run):
