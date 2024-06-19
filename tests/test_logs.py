@@ -4,7 +4,7 @@ import pytest
 
 from pytf.pytf.job_result import JobResult
 from pytf.pytf.job_status import JobStatus
-from pytf.pytf.logs import get_logged_jobs
+from pytf.pytf.logs import get_logged_job_results
 
 def test_get_logged_jobs(tmp_path):
     with open(os.path.join(tmp_path, "f1.j1.q1.w1.20240601010203.info"), "w") as f:
@@ -33,7 +33,7 @@ def test_get_logged_jobs(tmp_path):
         f.write('start_time = "2024/06/01 02:02:05"\n')
         f.write('error_code = 127\n')
 
-    job_results:[JobResult] = get_logged_jobs(str(tmp_path))
+    job_results:[JobResult] = get_logged_job_results(str(tmp_path))
 
     assert(job_results[0].family_name == 'f1')
     assert(job_results[0].job_name == 'j1')

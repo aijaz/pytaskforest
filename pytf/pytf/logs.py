@@ -10,7 +10,7 @@ from pytf.pytf.job_result import JobResult
 from pytf.pytf.job_status import JobStatus
 
 
-def get_logged_jobs(log_dir: str) -> [JobResult]:
+def get_logged_job_results(log_dir: str) -> [JobResult]:
     """
     File names are FamilyName.JobName.queue.worker_name.start_time_local.info
     File names are FamilyName.JobName.queue.worker_name.start_time_local.log

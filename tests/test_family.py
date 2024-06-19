@@ -1,11 +1,16 @@
 import pytest
 
+from pytf.pytf.exceptions import (
+    PyTaskforestParseException,
+    MSG_FAMILY_JOB_TWICE,
+)
 from pytf.pytf.forest import Forest
 from pytf.pytf.family import Family
 from pytf.pytf.days import Days
 from pytf.pytf.calendar import Calendar
 from pytf.pytf.job import Job
 from pytf.pytf.config import Config
+
 
 @pytest.fixture
 def monday_config():
@@ -158,7 +163,7 @@ def test_full_family_line_one_forest_plus_one_empty(two_cal_config):
     ---
     # foo
     """
-    fam = Family.parse("name", family_str, config=two_cal_config)
+    fam = Family.parse("f1_name", family_str, config=two_cal_config)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz == 'GMT'
@@ -347,3 +352,24 @@ def test_external_deps(two_cal_config):
     assert fam.forests[2].jobs[0][1].family_name == 'F4'
     assert fam.forests[2].jobs[0][1].job_name == 'JC'
     assert fam.forests[2].jobs[1][0].job_name == 'J10'
+
+
+def test_duplicate_jobs(two_cal_config):
+    family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
+
+    F2::JA()
+    
+    J1() J2() # bar
+    # foo
+      J3() # foo
+    J4() J5()
+    ---
+    # foo
+    J6()  J7() J8() J9() J2()
+     - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
+       F3::JB() F4::JC() 
+     J10()
+    """
+    with pytest.raises(PyTaskforestParseException) as excinfo:
+        fam = Family.parse("name", family_str, two_cal_config)
+    assert str(excinfo.value) == f"{MSG_FAMILY_JOB_TWICE} name::J2"

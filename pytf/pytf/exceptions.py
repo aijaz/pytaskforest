@@ -16,6 +16,7 @@ MSG_FAMILY_FIRST_LINE_PARSE_FAIL = "First line of family failed to parse:"
 MSG_FAMILY_INVALID_TYPE = "Invalid Type for job/key:"
 MSG_FAMILY_CAL_AND_DAYS = "Cannot have both Calendar and Days specified"
 MSG_FAMILY_UNKNOWN_CALENDAR = "Unknown Calendar:"
+MSG_FAMILY_JOB_TWICE = "Job appears more than once in a family:"
 
 MSG_CALENDAR_INVALID_RULE = "Invalid Calendar Rule:"
 MSG_CALENDAR_DANGLING_OFFSET = "No specifier after offset:"

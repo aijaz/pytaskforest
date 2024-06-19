@@ -14,19 +14,26 @@ from .exceptions import (
     MSG_FAMILY_START_TIME_PARSING_FAILED,
     MSG_FAMILY_CAL_AND_DAYS,
     MSG_FAMILY_UNKNOWN_CALENDAR,
+    MSG_FAMILY_JOB_TWICE,
 )
 from .parse_utils import parse_time, lower_true_false, simple_type
 from .config import Config
 from .calendar import Calendar
 from .days import Days
+from pytf.pytf.job import Job
 
 
 @define
 class Family:
-    name: str
-    start_time_hr: int
-    start_time_min: int
-    tz: str
+    """
+    A job name must only appear once in a family file.
+    If a job name appears more than once, it's an error.
+    The user should change it so that the job names are unique.
+    """
+    name: str = field()
+    start_time_hr: int = field()
+    start_time_min: int = field()
+    tz: str = field()
     calendar_or_days: Calendar | Days | None = field(default=None)
     queue: str | None = field(default=None)
     email: str | None = field(default=None)
@@ -36,6 +43,10 @@ class Family:
     no_retry_success_email: bool | None = field(default=None)
     forests: [Forest] = field(default=None)
     comment: str | None = field(default=None)
+    jobs_by_name: dict = field()
+    @jobs_by_name.default
+    def _jobs_by_name_default(self):
+        return {}
 
     # dynamic fields
     start_time_met_today: bool = field(default=False)
@@ -114,6 +125,13 @@ class Family:
         if len(fam.forests[-1].jobs) == 0:
             fam.forests.pop()
 
+
+        internal_jobs = fam.get_all_internal_jobs()
+        for job in internal_jobs:
+            if fam.jobs_by_name.get(job.job_name):
+                raise PyTaskforestParseException(f"{MSG_FAMILY_JOB_TWICE} {fam.name}::{job.job_name}")
+            fam.jobs_by_name[job.job_name] = job
+
         return fam
 
     @classmethod
@@ -172,3 +190,9 @@ class Family:
 
         if d.get('calendar') and d.get('days'):
             raise PyTaskforestParseException(MSG_FAMILY_CAL_AND_DAYS)
+
+    def get_all_internal_jobs(self) -> [Job]:
+        result = []
+        for forest in self.forests:
+            result.extend(forest.get_all_internal_jobs())
+        return result
