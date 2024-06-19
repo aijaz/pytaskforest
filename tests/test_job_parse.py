@@ -1,7 +1,7 @@
 import pytest
 
-from pytf.pytf.job import Job
-from pytf.pytf.exceptions import (
+from pytf.job import Job
+from pytf.exceptions import (
     PyTaskforestParseException,
     MSG_INNER_PARSING_FAILED,
     MSG_START_TIME_PARSING_FAILED,

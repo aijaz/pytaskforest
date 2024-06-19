@@ -2,6 +2,6 @@ from attrs import define
 
 
 @define
-class Token:
+class PyTfToken:
     name: str
     num_instances: int

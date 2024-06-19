@@ -8,13 +8,17 @@ from .exceptions import (
     PyTaskforestParseException,
     MSG_CONFIG_PARSING_FAILED
 )
-from .token import Token
+from pytf.pytftoken import PyTfToken
 
 
 @define
 class Config():
     toml_str: str = field(init=True)
-    d = field(init=False, default={})
+    d = field(init=False)
+
+    @d.default
+    def _d_default(self):
+        return {}
 
     log_dir: str | None = field(default=None)
     family_dir: str | None = field(default=None)
@@ -31,8 +35,13 @@ class Config():
     collapse: bool = field(default=True)
     chained: bool = field(default=True)
     log_level: int | None = field(default=logging.WARN)
-    ignore_regex: [str] = field(default=[".*~$", ".*\\.bak$", ".*\\$$"])
-    tokens: [Token] = field(default=None)
+    ignore_regex: [str] = field()
+
+    @ignore_regex.default
+    def _ignore_regex_default(self):
+        return [".*~$", ".*\\.bak$", ".*\\$$"]
+
+    tokens: [PyTfToken] = field(default=None)
     num_retries: int = field(default=1)
     retry_sleep: int = field(default=300)
     web_hook: str = field(default=None)

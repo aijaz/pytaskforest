@@ -15,7 +15,11 @@ from .exceptions import (
 @define
 class Calendar:
     calendar_name: str
-    rules: [str] = field(default=[])
+    rules: [str] = field()
+
+    @rules.default
+    def _rules(self):
+        return []
 
     def is_date_included(self, yyyy: int, mm: int, dd: int) -> bool:
         naive_dt = datetime.date(yyyy, mm, dd)

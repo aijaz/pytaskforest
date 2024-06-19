@@ -2,11 +2,11 @@ import os
 import pytest
 import pytz
 
-from pytf.pytf.mockdatetime import MockDateTime
-from pytf.pytf.dirs import dated_dir
-from pytf.pytf.main import make_family_dir_if_necessary, get_families_from_dir
-from pytf.pytf.config import Config
-from pytf.pytf.family import Family
+from pytf.mockdatetime import MockDateTime
+from pytf.dirs import dated_dir
+from pytf.main import make_family_dir_if_necessary, get_families_from_dir
+from pytf.config import Config
+from pytf.family import Family
 
 
 @pytest.fixture

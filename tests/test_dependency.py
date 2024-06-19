@@ -3,9 +3,9 @@ import datetime
 import pytest
 import pytz
 
-from pytf.pytf.config import Config
-from pytf.pytf.dependency import TimeDependency
-from pytf.pytf.mockdatetime import MockDateTime
+from pytf.config import Config
+from pytf.dependency import TimeDependency
+from pytf.mockdatetime import MockDateTime
 
 @pytest.fixture
 def denver_config():

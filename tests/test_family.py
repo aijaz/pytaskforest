@@ -1,15 +1,15 @@
 import pytest
 
-from pytf.pytf.exceptions import (
+from pytf.exceptions import (
     PyTaskforestParseException,
     MSG_FAMILY_JOB_TWICE,
 )
-from pytf.pytf.forest import Forest
-from pytf.pytf.family import Family
-from pytf.pytf.days import Days
-from pytf.pytf.calendar import Calendar
-from pytf.pytf.job import Job
-from pytf.pytf.config import Config
+from pytf.forest import Forest
+from pytf.family import Family
+from pytf.days import Days
+from pytf.calendar import Calendar
+from pytf.job import Job
+from pytf.config import Config
 
 
 @pytest.fixture

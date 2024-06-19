@@ -2,9 +2,9 @@ import os
 
 import pytest
 
-from pytf.pytf.job_result import JobResult
-from pytf.pytf.job_status import JobStatus
-from pytf.pytf.logs import get_logged_job_results
+from pytf.job_result import JobResult
+from pytf.job_status import JobStatus
+from pytf.logs import get_logged_job_results
 
 def test_get_logged_jobs(tmp_path):
     with open(os.path.join(tmp_path, "f1.j1.q1.w1.20240601010203.info"), "w") as f:

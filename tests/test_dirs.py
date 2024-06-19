@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from pytf.pytf.dirs import (
+from pytf.dirs import (
     copy_files_from_dir_to_dir,
     dated_dir,
     dated_subdir,
@@ -12,8 +12,8 @@ from pytf.pytf.dirs import (
     todays_log_dir,
     todays_family_dir,
 )
-from pytf.pytf.config import Config
-from pytf.pytf.mockdatetime import MockDateTime
+from pytf.config import Config
+from pytf.mockdatetime import MockDateTime
 
 
 @pytest.fixture
