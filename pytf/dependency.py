@@ -4,10 +4,7 @@ import pytz
 from attrs import define
 
 from .config import Config
-from .dirs import (
-    todays_family_dir,
-    todays_log_dir,
-)
+import pytf.dirs as dirs
 from .mockdatetime import MockDateTime
 
 
@@ -38,8 +35,8 @@ class JobDependency(Dependency):
 
     def met(self) -> bool:
         # Get job, find out from status if job has run today - need to get status
-        family_dir = todays_family_dir(config=self.config)
-        log_dir = todays_log_dir(config=self.config)
+        family_dir = dirs.todays_family_dir(config=self.config)
+        log_dir = dirs.todays_log_dir(config=self.config)
         return True
 
 

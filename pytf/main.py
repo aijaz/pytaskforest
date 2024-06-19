@@ -5,24 +5,18 @@ import pytz
 
 from .config import Config
 from .mockdatetime import MockDateTime, MockSleep
-from .dirs import (
-    copy_files_from_dir_to_dir,
-    dated_dir,
-    does_dir_exist,
-    make_dir,
-    make_dir_if_necessary,
-)
+import pytf.dirs as dirs
 from .family import Family, get_families_from_dir
 
 
 def main(config: Config):
     now: datetime.datetime = MockDateTime.now(tz=config.primary_tz)
 
-    todays_family_dir = dated_dir(os.path.join(config.family_dir, "{YYYY}{MM}{DD}"), now)
+    todays_family_dir = dirs.dated_dir(os.path.join(config.family_dir, "{YYYY}{MM}{DD}"), now)
     make_family_dir_if_necessary(config, todays_family_dir)
 
-    todays_log_dir = dated_dir(os.path.join(config.log_dir, "{YYYY}{MM}{DD}"), now)
-    make_dir_if_necessary(todays_log_dir)
+    todays_log_dir = dirs.dated_dir(os.path.join(config.log_dir, "{YYYY}{MM}{DD}"), now)
+    dirs.make_dir_if_necessary(todays_log_dir)
 
     config.todays_log_dir = todays_log_dir
     config.todays_family_dir = todays_family_dir
@@ -36,9 +30,9 @@ def main(config: Config):
 
 
 def make_family_dir_if_necessary(config, todays_family_dir):
-    if not does_dir_exist(todays_family_dir):
-        make_dir(todays_family_dir)
-        copy_files_from_dir_to_dir(config.family_dir, todays_family_dir)
+    if not dirs.does_dir_exist(todays_family_dir):
+        dirs.make_dir(todays_family_dir)
+        dirs.copy_files_from_dir_to_dir(config.family_dir, todays_family_dir)
 
 
 def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run):

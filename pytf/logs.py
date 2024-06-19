@@ -3,9 +3,7 @@ import os
 import pathlib
 import tomlkit
 
-from .dirs import (
-    list_of_files_in_dir,
-)
+import pytf.dirs as dirs
 from .job_result import JobResult
 from .job_status import JobStatus
 
@@ -18,7 +16,7 @@ def get_logged_job_results(log_dir: str) -> [JobResult]:
     :param log_dir:
     :return:
     """
-    files = list_of_files_in_dir(log_dir)
+    files = dirs.list_of_files_in_dir(log_dir)
     prefixes = [file_name[:-5] for file_name in files if file_name.endswith('.info')]
     job_results = []
     for prefix in prefixes:

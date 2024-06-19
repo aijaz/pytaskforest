@@ -2,10 +2,7 @@ import datetime
 import os.path
 
 from .config import Config
-from .dirs import (
-    todays_family_dir,
-    dated_subdir,
-)
+import pytf.dirs as dirs
 from .family import get_families_from_dir
 from .logs import get_logged_job_results
 from .mockdatetime import MockDateTime
@@ -17,7 +14,7 @@ def status(config: Config, dt: datetime.datetime=None):
 
     # To see what's run, don't consult families. Things might have changed.
     # Look at the log dir
-    log_dir_to_examine = dated_subdir(config.log_dir, dt)
+    log_dir_to_examine = dirs.dated_subdir(config.log_dir, dt)
     if not os.path.exists(log_dir_to_examine):
         return None
 
