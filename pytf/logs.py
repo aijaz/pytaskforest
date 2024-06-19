@@ -8,7 +8,7 @@ from .job_result import JobResult
 from .job_status import JobStatus
 
 
-def get_logged_job_results(log_dir: str) -> [JobResult]:
+def get_logged_job_results(log_dir: str) -> ([JobResult], dict[str, object]):
     """
     File names are FamilyName.JobName.queue.worker_name.start_time_local.info
     File names are FamilyName.JobName.queue.worker_name.start_time_local.log
@@ -18,7 +18,9 @@ def get_logged_job_results(log_dir: str) -> [JobResult]:
     """
     files = dirs.list_of_files_in_dir(log_dir)
     prefixes = [file_name[:-5] for file_name in files if file_name.endswith('.info')]
-    job_results = []
+    job_array = []
+    job_dict = {}
+
     for prefix in prefixes:
         job_info_str = pathlib.Path(os.path.join(log_dir, f"{prefix}.info")).read_text()
         job_info = tomlkit.loads(job_info_str)
@@ -38,7 +40,9 @@ def get_logged_job_results(log_dir: str) -> [JobResult]:
                                error_code=error_code,
                                start_time=job_info["start_time"],
                                )
+        if not job_dict.get(job_result.family_name):
+            job_dict[job_result.family_name] = {}
+        job_dict[job_result.family_name][job_result.job_name] = job_result
+        job_array.append(job_result)
 
-        job_results.append(job_result)
-
-    return job_results
+    return job_array, job_dict

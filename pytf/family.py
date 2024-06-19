@@ -10,7 +10,9 @@ import pytf.exceptions as ex
 from .parse_utils import parse_time, lower_true_false, simple_type
 from .config import Config
 from .calendar import Calendar
+from .dependency import JobDependency, TimeDependency
 from .days import Days
+from .external_dependency import ExternalDependency
 from .job import Job
 import pytf.dirs as dirs
 
@@ -116,6 +118,30 @@ class Family:
         if len(fam.forests[-1].jobs) == 0:
             fam.forests.pop()
 
+        # set up dependencies
+        for forest in fam.forests:
+            last_job_dependency_list = []
+            for job_line in forest.jobs:
+                for job_or_external_dependency in job_line:
+                    if isinstance(job_or_external_dependency, Job):
+                        job: Job = job_or_external_dependency
+                        # add job dependency(ies)
+                        job.dependencies = list(last_job_dependency_list)
+                        # add time dependency
+                        if job.start_time_hr is not None and job.start_time_min is not None:
+                            tz = job.tz
+                            if tz is None:
+                                tz = fam.tz
+                            if tz is None:
+                                tz = config.primary_tz
+                            job.dependencies.append(TimeDependency(config, job.start_time_hr, job.start_time_min, tz))
+                # update last_job_dependency_list
+                last_job_dependency_list = []
+                for i in job_line:
+                    if isinstance(i, JobDependency):
+                        last_job_dependency_list.append(JobDependency(config, fam.name, i.job_name))
+                    elif isinstance(i, ExternalDependency):
+                        last_job_dependency_list.append(JobDependency(config, i.family_name, i.job_name))
 
         internal_jobs = fam.get_all_internal_jobs()
         for job in internal_jobs:

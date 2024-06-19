@@ -18,7 +18,10 @@ def status(config: Config, dt: datetime.datetime=None):
     if not os.path.exists(log_dir_to_examine):
         return None
 
-    logged_job_results = get_logged_job_results(log_dir_to_examine)
+    logged_jobs_list, logged_jobs_dict = get_logged_job_results(log_dir_to_examine)
 
     # get all jobs from today's family_dir
     families = get_families_from_dir(config.todays_family_dir, config)
+
+    for family in families:
+        for job in family.get_all_internal_jobs():

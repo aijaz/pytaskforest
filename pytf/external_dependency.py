@@ -1,6 +1,6 @@
 import re
 
-from attrs import define, asdict
+from attrs import define
 
 
 @define

@@ -39,7 +39,11 @@ class Job:
     base_name: str = field(default="")
     has_actual_start: bool = field(default=False)
     status: JobStatus = field(default=JobStatus.WAITING)
-    dependencies = [Dependency]
+    dependencies: [Dependency] = field()
+
+    @dependencies.default
+    def _dependencies_default(self):
+        return []
 
 
 
