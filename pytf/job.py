@@ -43,7 +43,7 @@ class Job:
 
     @dependencies.default
     def _dependencies_default(self):
-        return []
+        return set()
 
 
 

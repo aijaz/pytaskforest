@@ -120,13 +120,13 @@ class Family:
 
         # set up dependencies
         for forest in fam.forests:
-            last_job_dependency_list = []
+            last_job_dependency_set = set()
             for job_line in forest.jobs:
                 for job_or_external_dependency in job_line:
                     if isinstance(job_or_external_dependency, Job):
                         job: Job = job_or_external_dependency
                         # add job dependency(ies)
-                        job.dependencies = list(last_job_dependency_list)
+                        job.dependencies = set(last_job_dependency_set)
                         # add time dependency
                         if job.start_time_hr is not None and job.start_time_min is not None:
                             tz = job.tz
@@ -134,14 +134,14 @@ class Family:
                                 tz = fam.tz
                             if tz is None:
                                 tz = config.primary_tz
-                            job.dependencies.append(TimeDependency(config, job.start_time_hr, job.start_time_min, tz))
-                # update last_job_dependency_list
-                last_job_dependency_list = []
-                for i in job_line:
-                    if isinstance(i, JobDependency):
-                        last_job_dependency_list.append(JobDependency(config, fam.name, i.job_name))
-                    elif isinstance(i, ExternalDependency):
-                        last_job_dependency_list.append(JobDependency(config, i.family_name, i.job_name))
+                            job.dependencies.add(TimeDependency(config, job.start_time_hr, job.start_time_min, tz))
+                # update last_job_dependency_set
+                last_job_dependency_set = {
+                        JobDependency(config, fam.name, i.job_name)
+                        if isinstance(i, JobDependency)
+                        else JobDependency(config, i.family_name, i.job_name)
+                    for i in job_line
+                }
 
         internal_jobs = fam.get_all_internal_jobs()
         for job in internal_jobs:

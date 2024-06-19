@@ -15,6 +15,15 @@ class Dependency:
     def met(self, user_info) -> bool:
         return False
 
+    def __str__(self):
+        return ""
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self,other):
+        return str(self) == str(other)
+
 
 @define
 class TimeDependency(Dependency):
@@ -26,6 +35,15 @@ class TimeDependency(Dependency):
         now = MockDateTime.now(self.tz)
         then = pytz.timezone(self.tz).localize(datetime.datetime(now.year, now.month, now.day, self.hh, self.mm, 0, 0))
         return then <= now
+
+    def __str__(self):
+        return f"{self.hh}{self.mm}{self.tz}"
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self,other):
+        return str(self) == str(other)
 
 
 @define
@@ -39,6 +57,15 @@ class JobDependency(Dependency):
         if family_dict := logged_jobs_dict.get(self.family_name):
             return family_dict.get(self.job_name) is not None
         return False
+
+    def __str__(self):
+        return f"{self.family_name}{self.job_name}"
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self,other):
+        return str(self) == str(other)
 
 
 @define
