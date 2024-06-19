@@ -1,14 +1,14 @@
 import datetime
 import os.path
 
-from pytf.pytf.config import Config
-from pytf.pytf.dirs import (
+from .config import Config
+from .dirs import (
     todays_family_dir,
     dated_subdir,
 )
 from .family import get_families_from_dir
-from pytf.pytf.logs import get_logged_job_results
-from pytf.pytf.mockdatetime import MockDateTime
+from .logs import get_logged_job_results
+from .mockdatetime import MockDateTime
 
 
 def status(config: Config, dt: datetime.datetime=None):

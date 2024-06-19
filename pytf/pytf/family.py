@@ -20,7 +20,7 @@ from .parse_utils import parse_time, lower_true_false, simple_type
 from .config import Config
 from .calendar import Calendar
 from .days import Days
-from pytf.pytf.job import Job
+from .job import Job
 from .dirs import text_files_in_dir
 
 

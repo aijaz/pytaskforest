@@ -4,8 +4,8 @@ import pathlib
 import re
 import shutil
 
-from pytf.pytf.mockdatetime import MockDateTime
-from pytf.pytf.config import Config
+from .mockdatetime import MockDateTime
+from .config import Config
 
 
 def todays_family_dir(config: Config) -> str:

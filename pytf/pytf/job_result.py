@@ -2,7 +2,7 @@ import datetime
 
 from attrs import define, field
 
-from pytf.pytf.job_status import JobStatus
+from .job_status import JobStatus
 
 @define
 class JobResult:

@@ -3,11 +3,11 @@ import os
 import pathlib
 import tomlkit
 
-from pytf.pytf.dirs import (
+from .dirs import (
     list_of_files_in_dir,
 )
-from pytf.pytf.job_result import JobResult
-from pytf.pytf.job_status import JobStatus
+from .job_result import JobResult
+from .job_status import JobStatus
 
 
 def get_logged_job_results(log_dir: str) -> [JobResult]:

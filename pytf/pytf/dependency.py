@@ -3,12 +3,12 @@ import datetime
 import pytz
 from attrs import define
 
-from pytf.pytf.config import Config
-from pytf.pytf.dirs import (
+from .config import Config
+from .dirs import (
     todays_family_dir,
     todays_log_dir,
 )
-from pytf.pytf.mockdatetime import MockDateTime
+from .mockdatetime import MockDateTime
 
 
 @define
