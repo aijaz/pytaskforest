@@ -2,19 +2,16 @@ import re
 
 import tomlkit.items
 
-from .exceptions import (
-    PyTaskforestParseException,
-)
-
+import pytf.exceptions as ex
 
 def parse_time(d, field_parent_name, field_name, exception_str) -> (int | None, int | None):
     if val := d.get(field_name):
         if len(val) != 4:
-            raise PyTaskforestParseException(f"{exception_str} {field_parent_name}")
+            raise ex.PyTaskforestParseException(f"{exception_str} {field_parent_name}")
         try:
             hh, mm = (int(val[:2]), int(val[2:]))
         except ValueError as e:
-            raise PyTaskforestParseException(
+            raise ex.PyTaskforestParseException(
                 f"{exception_str} {field_parent_name}"
             ) from e
         return hh, mm

@@ -5,13 +5,7 @@ import tomlkit.exceptions
 import tomlkit.items
 from attrs import define, field
 
-from .exceptions import (PyTaskforestParseException,
-                         MSG_INNER_PARSING_FAILED,
-                         MSG_START_TIME_PARSING_FAILED,
-                         MSG_UNTIL_TIME_PARSING_FAILED,
-                         MSG_UNRECOGNIZED_PARAM,
-                         MSG_INVALID_TYPE,
-                         )
+import pytf.exceptions as ex
 from .parse_utils import parse_time, lower_true_false, simple_type
 from .dependency import Dependency
 from .job_status import JobStatus
@@ -70,14 +64,14 @@ class Job:
         try:
             toml_d = tomlkit.loads(toml_str)
         except tomlkit.exceptions.UnexpectedCharError as e:
-            raise PyTaskforestParseException(MSG_INNER_PARSING_FAILED) from e
+            raise ex.PyTaskforestParseException(ex.MSG_INNER_PARSING_FAILED) from e
 
         d = toml_d.get('d', {})
 
         cls.validate_inner_params(d, j.job_name)
 
-        j.start_time_hr, j.start_time_min = parse_time(d, j.job_name, 'start', MSG_START_TIME_PARSING_FAILED)
-        j.until_hr, j.until_min = parse_time(d, j.job_name, 'until', MSG_UNTIL_TIME_PARSING_FAILED)
+        j.start_time_hr, j.start_time_min = parse_time(d, j.job_name, 'start', ex.MSG_START_TIME_PARSING_FAILED)
+        j.until_hr, j.until_min = parse_time(d, j.job_name, 'until', ex.MSG_UNTIL_TIME_PARSING_FAILED)
         j.tz = d.get('tz')
         j.every = d.get('every')
         j.chained = d.get('chained')
@@ -115,7 +109,7 @@ class Job:
         ]
         for key in d:
             if key not in valid_keys:
-                raise (PyTaskforestParseException(f"{MSG_UNRECOGNIZED_PARAM}: {job_name}/{key}"))
+                raise (ex.PyTaskforestParseException(f"{ex.MSG_UNRECOGNIZED_PARAM}: {job_name}/{key}"))
 
         strs = [
             'tz',
@@ -144,18 +138,18 @@ class Job:
 
         for key in strs:
             if key in d and type(d[key]) is not tomlkit.items.String:
-                raise PyTaskforestParseException(f"{MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
 
         for key in ints:
             if key in d and type(d[key]) is not tomlkit.items.Integer:
-                raise PyTaskforestParseException(f"{MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
 
         for key in bools:
             if key in d and type(d[key]) is not bool:
-                raise PyTaskforestParseException(f"{MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
 
         for key in str_lists:
             if key in d:
                 for i in d[key]:
                     if type(i) is not tomlkit.items.String:
-                        raise PyTaskforestParseException(f"{MSG_INVALID_TYPE} {job_name}/{key} ({d[key]} :: {i})")
+                        raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]} :: {i})")

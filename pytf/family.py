@@ -6,16 +6,7 @@ import tomlkit.exceptions
 import tomlkit.items
 
 from .forest import Forest
-from .exceptions import (
-    PyTaskforestParseException,
-    MSG_FAMILY_FIRST_LINE_PARSE_FAIL,
-    MSG_FAMILY_INVALID_TYPE,
-    MSG_FAMILY_UNRECOGNIZED_PARAM,
-    MSG_FAMILY_START_TIME_PARSING_FAILED,
-    MSG_FAMILY_CAL_AND_DAYS,
-    MSG_FAMILY_UNKNOWN_CALENDAR,
-    MSG_FAMILY_JOB_TWICE,
-)
+import pytf.exceptions as ex
 from .parse_utils import parse_time, lower_true_false, simple_type
 from .config import Config
 from .calendar import Calendar
@@ -70,7 +61,7 @@ class Family:
         try:
             toml_d = tomlkit.loads(first_line_toml_str)
         except tomlkit.exceptions.UnexpectedEofError as e:
-            raise PyTaskforestParseException(f"{MSG_FAMILY_FIRST_LINE_PARSE_FAIL} {first_line}") from e
+            raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_FIRST_LINE_PARSE_FAIL} {first_line}") from e
 
         d = toml_d.get('d')
 
@@ -79,7 +70,7 @@ class Family:
         fam.start_time_hr, fam.start_time_min = parse_time(d,
                                                            "",
                                                            'start',
-                                                           MSG_FAMILY_START_TIME_PARSING_FAILED)
+                                                           ex.MSG_FAMILY_START_TIME_PARSING_FAILED)
         fam.tz = d.get('tz')
         fam.queue = d.get('queue')
         fam.retry_email = d.get('retry_email')
@@ -94,7 +85,7 @@ class Family:
             try:
                 rules = config['calendars'][calendar_name]
             except KeyError as e:
-                raise PyTaskforestParseException(f"{MSG_FAMILY_UNKNOWN_CALENDAR} {calendar_name}") from e
+                raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_UNKNOWN_CALENDAR} {calendar_name}") from e
 
             fam.calendar_or_days = Calendar(calendar_name, rules=rules)
         elif d.get('days'):
@@ -130,7 +121,7 @@ class Family:
         internal_jobs = fam.get_all_internal_jobs()
         for job in internal_jobs:
             if fam.jobs_by_name.get(job.job_name):
-                raise PyTaskforestParseException(f"{MSG_FAMILY_JOB_TWICE} {fam.name}::{job.job_name}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_JOB_TWICE} {fam.name}::{job.job_name}")
             fam.jobs_by_name[job.job_name] = job
 
         return fam
@@ -152,7 +143,7 @@ class Family:
         ]
         for key in d:
             if key not in valid_keys:
-                raise (PyTaskforestParseException(f"{MSG_FAMILY_UNRECOGNIZED_PARAM}: {key}"))
+                raise (ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_UNRECOGNIZED_PARAM}: {key}"))
 
         strs = [
             'tz',
@@ -175,22 +166,22 @@ class Family:
 
         for key in strs:
             if key in d and type(d[key]) is not tomlkit.items.String:
-                raise PyTaskforestParseException(
-                    f"{MSG_FAMILY_INVALID_TYPE} {key} ({d[key]}) is type {simple_type(d[key])}")
+                raise ex.PyTaskforestParseException(
+                    f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]}) is type {simple_type(d[key])}")
 
         for key in bools:
             if key in d and type(d[key]) is not bool:
-                raise PyTaskforestParseException(
-                    f"{MSG_FAMILY_INVALID_TYPE} {key} ({d[key]}) is type {simple_type(d[key])}")
+                raise ex.PyTaskforestParseException(
+                    f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]}) is type {simple_type(d[key])}")
 
         for key in str_lists:
             if key in d:
                 for i in d[key]:
                     if type(i) is not tomlkit.items.String:
-                        raise PyTaskforestParseException(f"{MSG_FAMILY_INVALID_TYPE} {key} ({d[key]} :: {i})")
+                        raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]} :: {i})")
 
         if d.get('calendar') and d.get('days'):
-            raise PyTaskforestParseException(MSG_FAMILY_CAL_AND_DAYS)
+            raise ex.PyTaskforestParseException(ex.MSG_FAMILY_CAL_AND_DAYS)
 
     def get_all_internal_jobs(self) -> [Job]:
         result = []

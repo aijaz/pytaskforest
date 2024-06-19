@@ -3,14 +3,7 @@ import calendar
 
 from attrs import define, field
 
-from .exceptions import (
-    PyTaskforestParseException,
-    MSG_CALENDAR_INVALID_RULE,
-    MSG_CALENDAR_DANGLING_OFFSET,
-    MSG_CALENDAR_OFFSET_AND_DATE,
-    MSG_CALENDAR_INVALID_DATE
-)
-
+import pytf.exceptions as ex
 
 @define
 class Calendar:
@@ -38,7 +31,7 @@ class Calendar:
         plus_or_minus = '+'
         components = rule.split()
         if len(components) == 0:
-            raise PyTaskforestParseException(f"{MSG_CALENDAR_INVALID_RULE} rule")
+            raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_INVALID_RULE} rule")
         elif len(components) > 1 and components[0] in '-+':
             plus_or_minus = components.pop(0)
 
@@ -55,7 +48,7 @@ class Calendar:
         }
         if components[0].lower() in offsets:
             if len(components) < 2:
-                raise PyTaskforestParseException(f"{MSG_CALENDAR_DANGLING_OFFSET} {components[0]}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_DANGLING_OFFSET} {components[0]}")
 
             nth = offsets[components[0].lower()]
             if components[1].lower() == 'last':
@@ -63,7 +56,7 @@ class Calendar:
                 del (components[1])  # get rid of 'last'
 
             if len(components) < 2:
-                raise PyTaskforestParseException(f"{MSG_CALENDAR_DANGLING_OFFSET} {components[0]}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_DANGLING_OFFSET} {components[0]}")
 
             dows = {
                 "mon": 0,
@@ -84,10 +77,10 @@ class Calendar:
             yyyymmdd = components[0]
             date_components = yyyymmdd.split('/')
             if len(date_components) > 3:
-                raise PyTaskforestParseException(f"{MSG_CALENDAR_INVALID_DATE} {yyyymmdd}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_INVALID_DATE} {yyyymmdd}")
 
             if nth is not None and len(date_components) == 3:
-                raise PyTaskforestParseException(f"{MSG_CALENDAR_OFFSET_AND_DATE} {yyyymmdd}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_OFFSET_AND_DATE} {yyyymmdd}")
 
             yyyy, mm, dd = '*', '*', '*'
             if len(date_components) >= 1:
@@ -105,10 +98,10 @@ class Calendar:
                 if dd != '*':
                     dd = int(dd)
             except ValueError as e:
-                raise PyTaskforestParseException(f"{MSG_CALENDAR_INVALID_DATE} {yyyymmdd}") from e
+                raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_INVALID_DATE} {yyyymmdd}") from e
 
             if (yyyy != '*' and yyyy < 1970) or (mm != '*' and (mm < 1 or mm > 12)) or (dd != '*' and (dd < 1 or dd > 31)):
-                raise PyTaskforestParseException(f"{MSG_CALENDAR_INVALID_DATE} {yyyymmdd}")
+                raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_INVALID_DATE} {yyyymmdd}")
 
             # now try to eliminate based on yyyy mm and dd
 

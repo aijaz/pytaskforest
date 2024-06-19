@@ -4,10 +4,7 @@ import tomlkit
 import tomlkit.exceptions
 from attrs import define, field
 
-from .exceptions import (
-    PyTaskforestParseException,
-    MSG_CONFIG_PARSING_FAILED
-)
+import pytf.exceptions as ex
 from pytf.pytftoken import PyTfToken
 
 
@@ -80,4 +77,4 @@ class Config():
 
             return obj
         except tomlkit.exceptions.UnexpectedCharError as e:
-            raise PyTaskforestParseException(MSG_CONFIG_PARSING_FAILED) from e
+            raise ex.PyTaskforestParseException(ex.MSG_CONFIG_PARSING_FAILED) from e
