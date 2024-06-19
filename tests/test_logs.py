@@ -3,6 +3,7 @@ import os
 import pytest
 
 from pytf.pytf.job_result import JobResult
+from pytf.pytf.job_status import JobStatus
 from pytf.pytf.logs import get_logged_jobs
 
 def test_get_logged_jobs(tmp_path):
@@ -41,6 +42,7 @@ def test_get_logged_jobs(tmp_path):
     assert(job_results[0].worker_name == 'w1')
     assert(job_results[0].start_time == '2024/06/01 02:02:03')
     assert(job_results[0].error_code is None)
+    assert(job_results[0].status == JobStatus.RUNNING)
 
     assert(job_results[1].family_name == 'f1')
     assert(job_results[1].job_name == 'j2')
@@ -49,6 +51,7 @@ def test_get_logged_jobs(tmp_path):
     assert(job_results[1].worker_name == 'w1')
     assert(job_results[1].start_time == '2024/06/01 02:02:04')
     assert(job_results[1].error_code == 0)
+    assert(job_results[1].status == JobStatus.SUCCESS)
 
     assert(job_results[2].family_name == 'f1')
     assert(job_results[2].job_name == 'j3')
@@ -57,4 +60,5 @@ def test_get_logged_jobs(tmp_path):
     assert(job_results[2].worker_name == 'w1')
     assert(job_results[2].start_time == '2024/06/01 02:02:05')
     assert(job_results[2].error_code == 127)
+    assert(job_results[2].status == JobStatus.FAILURE)
 
