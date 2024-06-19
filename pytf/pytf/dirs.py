@@ -71,3 +71,11 @@ def copy_files_from_dir_to_dir(src: str, dest: str):
 def make_dir_if_necessary(the_dir):
     if not does_dir_exist(the_dir):
         make_dir(the_dir)
+
+
+def list_of_files_in_dir(dir_name: str) -> [str]:
+    path = pathlib.Path(dir_name)
+    files = [item.name for item in path.iterdir() if item.is_file()]
+    files.sort()
+    return files
+

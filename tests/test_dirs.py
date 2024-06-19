@@ -8,6 +8,7 @@ from pytf.pytf.dirs import (
     dated_subdir,
     dated_subdir_primary_today,
     does_dir_exist,
+    list_of_files_in_dir,
     todays_log_dir,
     todays_family_dir,
 )
@@ -113,3 +114,35 @@ def test_todays_family_dir(denver_config):
     the_dir = todays_family_dir(denver_config)
     assert (the_dir == os.path.join("/a/f/", "20240601"))
 
+
+def test_list_of_files_in_dir(tmp_path):
+    with open(os.path.join(tmp_path, 'a'), "w") as f:
+        f.write('a')
+    with open(os.path.join(tmp_path, 's'), "w") as f:
+        f.write('s')
+    with open(os.path.join(tmp_path, 'd'), "w") as f:
+        f.write('d')
+    with open(os.path.join(tmp_path, 'f'), "w") as f:
+        f.write('f')
+    with open(os.path.join(tmp_path, 'g'), "w") as f:
+        f.write('g')
+    with open(os.path.join(tmp_path, 'l'), "w") as f:
+        f.write('l')
+    with open(os.path.join(tmp_path, 'k'), "w") as f:
+        f.write('k')
+    with open(os.path.join(tmp_path, 'j'), "w") as f:
+        f.write('j')
+    with open(os.path.join(tmp_path, 'h'), "w") as f:
+        f.write('h')
+
+    files = list_of_files_in_dir(str(tmp_path))
+    assert len(files) == 9
+    assert files[0] == 'a'
+    assert files[1] == 'd'
+    assert files[2] == 'f'
+    assert files[3] == 'g'
+    assert files[4] == 'h'
+    assert files[5] == 'j'
+    assert files[6] == 'k'
+    assert files[7] == 'l'
+    assert files[8] == 's'

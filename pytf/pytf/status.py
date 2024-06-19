@@ -4,7 +4,6 @@ import os.path
 from pytf.pytf.config import Config
 from pytf.pytf.dirs import (
     todays_family_dir,
-    todays_log_dir,
     dated_subdir,
 )
 from pytf.pytf.mockdatetime import MockDateTime
