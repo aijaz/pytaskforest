@@ -71,7 +71,7 @@ class Family:
 
     @classmethod
     def _set_jobs_by_name(cls, fam):
-        internal_jobs = fam.get_all_internal_jobs()
+        internal_jobs = fam._get_all_internal_jobs()
         for job in internal_jobs:
             if fam.jobs_by_name.get(job.job_name):
                 raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_JOB_TWICE} {fam.name}::{job.job_name}")
@@ -252,10 +252,10 @@ class Family:
             if key not in valid_keys:
                 raise (ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_UNRECOGNIZED_PARAM}: {key}"))
 
-    def get_all_internal_jobs(self) -> [Job]:
+    def _get_all_internal_jobs(self) -> [Job]:
         result = []
         for forest in self.forests:
-            result.extend(forest.get_all_internal_jobs())
+            result.extend(forest._get_all_internal_jobs())
         return result
 
 
@@ -263,5 +263,3 @@ def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
     files = dirs.text_files_in_dir(family_dir, config.ignore_regex)
     files.sort(key=lambda tup: tup[0])
     return [Family.parse(family_name=item[0], family_str=item[1], config=config) for item in files]
-
-

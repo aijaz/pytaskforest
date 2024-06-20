@@ -23,5 +23,6 @@ def status(config: Config, dt: datetime.datetime=None):
     # get all jobs from today's family_dir
     families = get_families_from_dir(config.todays_family_dir, config)
 
-    for family in families:
-        for job in family.get_all_internal_jobs():
+    # for family in families:
+    #     for _ in family._get_all_internal_jobs()
+    #         pass
