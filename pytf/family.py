@@ -81,38 +81,55 @@ class Family:
     def _populate_family_forests(cls, config, fam, family_name, lines):
         fam.forests = [Forest(jobs=[])]
 
-        cls._create_forests_from_ines(fam, family_name, lines)
+        cls._create_forests_from_lines(fam, family_name, lines)
 
         # get rid of last forest if it has no jobs
         if len(fam.forests[-1].jobs) == 0:
             fam.forests.pop()
+            
         # set up dependencies
         for forest in fam.forests:
-            last_job_dependency_set = set()
-            for job_line in forest.jobs:
-                for job_or_external_dependency in job_line:
-                    if isinstance(job_or_external_dependency, Job):
-                        job: Job = job_or_external_dependency
-                        # add job dependency(ies)
-                        job.dependencies = set(last_job_dependency_set)
-                        # add time dependency
-                        if job.start_time_hr is not None and job.start_time_min is not None:
-                            tz = job.tz or fam.tz or config.primary_tz
-                            job.dependencies.add(TimeDependency(config, job.start_time_hr, job.start_time_min, tz))
-                        if fam.start_time_hr is not None and fam.start_time_min is not None:
-                            tz = fam.tz or config.primary_tz
-                            job.dependencies.add(TimeDependency(config, fam.start_time_hr, fam.start_time_min, tz))
-
-                # update last_job_dependency_set
-                last_job_dependency_set = {
-                    JobDependency(config, fam.name, i.job_name)
-                    if isinstance(i, JobDependency)
-                    else JobDependency(config, i.family_name, i.job_name)
-                    for i in job_line
-                }
+            cls._setup_forest_dependencies(config, fam, forest)
 
     @classmethod
-    def _create_forests_from_ines(cls, fam, family_name, lines):
+    def _setup_forest_dependencies(cls, config, fam, forest):
+        last_job_dependency_set = set()
+        for job_line in forest.jobs:
+            last_job_dependency_set = cls._create_dependencies_for_job_line(config, fam, job_line, last_job_dependency_set)
+
+    @classmethod
+    def _create_dependencies_for_job_line(cls, config, fam, job_line, last_job_dependency_set) -> set:
+        for job_or_external_dependency in job_line:
+            if not isinstance(job_or_external_dependency, Job):
+                continue
+
+            # add job dependency(ies)
+            job_or_external_dependency.dependencies = set(last_job_dependency_set)
+
+            # add time dependencies
+            cls._add_time_dependencies_for_job(config, fam, job_or_external_dependency)
+
+        # return new last_job_dependency_set
+        return {
+            JobDependency(config, fam.name, i.job_name)
+            if isinstance(i, JobDependency)
+            else JobDependency(config, i.family_name, i.job_name)
+            for i in job_line
+        }
+
+    @classmethod
+    def _add_time_dependencies_for_job(cls, config, fam, job: Job):
+
+        if job.start_time_hr is not None and job.start_time_min is not None:
+            tz = job.tz or fam.tz or config.primary_tz
+            job.dependencies.add(TimeDependency(config, job.start_time_hr, job.start_time_min, tz))
+
+        if fam.start_time_hr is not None and fam.start_time_min is not None:
+            tz = fam.tz or config.primary_tz
+            job.dependencies.add(TimeDependency(config, fam.start_time_hr, fam.start_time_min, tz))
+
+    @classmethod
+    def _create_forests_from_lines(cls, fam, family_name, lines):
         comments_pattern = re.compile(r'#.*$')
         dashes_pattern = re.compile('^[- ]+$')
 
