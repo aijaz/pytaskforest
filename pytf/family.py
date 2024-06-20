@@ -1,3 +1,4 @@
+import os
 import re
 
 from attrs import define, field
@@ -14,6 +15,8 @@ from .dependency import JobDependency, TimeDependency
 from .days import Days
 from .external_dependency import ExternalDependency
 from .job import Job
+import pytf.logs
+from .mockdatetime import MockDateTime
 import pytf.dirs as dirs
 
 
@@ -44,7 +47,7 @@ class Family:
         return {}
 
     # dynamic fields
-    start_time_met_today: bool = field(default=False)
+    config: Config | None = field(default=None)
 
     @classmethod
     def parse(cls, family_name: str, family_str: str, config: Config):
@@ -52,7 +55,8 @@ class Family:
             name=family_name,
             start_time_hr=0,
             start_time_min=0,
-            tz=''
+            tz='',
+            config=config
         )
 
         lines = family_str.split("\n")
@@ -258,8 +262,29 @@ class Family:
             result.extend(forest._get_all_internal_jobs())
         return result
 
+    def names_of_all_ready_jobs(self):
+        result = []
+
+        dt = MockDateTime.now(self.config.primary_tz)
+
+        log_dir_to_examine = dirs.dated_subdir(self.config.log_dir, dt)
+        if not os.path.exists(log_dir_to_examine):
+            return None
+
+        logged_jobs_list, logged_jobs_dict = pytf.logs.get_logged_job_results(log_dir_to_examine)
+
+        for job_name in self.jobs_by_name:
+            unmet = [True for d in self.jobs_by_name[job_name].dependencies if d.met(logged_jobs_dict) is False]
+            if unmet:
+                continue
+            result.append(job_name)
+
+        return result
+
+
 
 def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
     files = dirs.text_files_in_dir(family_dir, config.ignore_regex)
     files.sort(key=lambda tup: tup[0])
     return [Family.parse(family_name=item[0], family_str=item[1], config=config) for item in files]
+
