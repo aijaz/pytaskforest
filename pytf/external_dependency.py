@@ -19,3 +19,12 @@ class ExternalDependency:
         j.family_name = match[1]
         j.job_name = match[2]
         return j
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self,other):
+        return str(self) == str(other)
+
+    def __str__(self):
+        return f"{self.family_name}{self.job_name}"

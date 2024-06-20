@@ -35,7 +35,7 @@ class Job:
 
     # dynamic fields
     start_time_met_today: bool = field(default=False)
-    family_name: str = field(default="")
+    family_name: str|None = field(default=None)
     base_name: str = field(default="")
     has_actual_start: bool = field(default=False)
     status: JobStatus = field(default=JobStatus.WAITING)

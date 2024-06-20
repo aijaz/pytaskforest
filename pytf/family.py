@@ -112,6 +112,8 @@ class Family:
 
             # now we have a line of jobs
             jobs = Forest.split_jobs(line)
+            for job in jobs:
+                job.family_name = job.family_name or family_name # don't change family name for external dependencies
             fam.forests[-1].jobs.append(jobs)
 
         # get rid of last forest if it has no jobs
@@ -129,12 +131,12 @@ class Family:
                         job.dependencies = set(last_job_dependency_set)
                         # add time dependency
                         if job.start_time_hr is not None and job.start_time_min is not None:
-                            tz = job.tz
-                            if tz is None:
-                                tz = fam.tz
-                            if tz is None:
-                                tz = config.primary_tz
+                            tz = job.tz or fam.tz or config.primary_tz
                             job.dependencies.add(TimeDependency(config, job.start_time_hr, job.start_time_min, tz))
+                        if fam.start_time_hr is not None and fam.start_time_min is not None:
+                            tz = fam.tz or config.primary_tz
+                            job.dependencies.add(TimeDependency(config, fam.start_time_hr, fam.start_time_min, tz))
+
                 # update last_job_dependency_set
                 last_job_dependency_set = {
                         JobDependency(config, fam.name, i.job_name)
