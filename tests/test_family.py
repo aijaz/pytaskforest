@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 import pytf.dirs as dirs
@@ -11,6 +13,7 @@ from pytf.calendar import Calendar
 from pytf.job import Job
 from pytf.mockdatetime import MockDateTime
 from pytf.config import Config
+import pytf.logs
 
 
 @pytest.fixture
@@ -639,7 +642,7 @@ def test_external_deps_tz(two_cal_config):
     assert (ExternalDependency('F4', 'JC') in fam.jobs_by_name['J10'].dependencies)
 
 
-def test_external_deps_fallback_tz(two_cal_config_chicago):
+def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     family_str = """start="0214", queue="main", email="a@b.c"
 
     F2::JA()
@@ -655,6 +658,10 @@ def test_external_deps_fallback_tz(two_cal_config_chicago):
        F3::JB() F4::JC() 
      J10()
     """
+    MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
+    two_cal_config_chicago.log_dir = tmp_path
+    todays_log_dir = dirs.todays_log_dir(two_cal_config_chicago)
+    dirs.make_dir(todays_log_dir)
     fam = Family.parse("name", family_str, two_cal_config_chicago)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
@@ -720,6 +727,218 @@ def test_external_deps_fallback_tz(two_cal_config_chicago):
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J10'].dependencies)
     assert (ExternalDependency('F3', 'JB') in fam.jobs_by_name['J10'].dependencies)
     assert (ExternalDependency('F4', 'JC') in fam.jobs_by_name['J10'].dependencies)
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 4
+    assert "J6" in ready_jobs
+    assert "J7" in ready_jobs
+    assert "J8" in ready_jobs
+    assert "J9" in ready_jobs
+
+    # show that ext dep is not enough if a time dep exists
+    with open(os.path.join(todays_log_dir, "F2.JA.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "F2"\n')
+        f.write('job_name = "JA"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 4
+    assert "J6" in ready_jobs
+    assert "J7" in ready_jobs
+    assert "J8" in ready_jobs
+    assert "J9" in ready_jobs
+
+    # 2 other ext deps
+    with open(os.path.join(todays_log_dir, "F3.JB.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "F3"\n')
+        f.write('job_name = "JB"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    with open(os.path.join(todays_log_dir, "F4.JC.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "F4"\n')
+        f.write('job_name = "JC"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 5
+    assert "J6" in ready_jobs
+    assert "J7" in ready_jobs
+    assert "J8" in ready_jobs
+    assert "J9" in ready_jobs
+    assert "J10" in ready_jobs
+
+    MockDateTime.set_mock(2024, 2, 14, 3, 30, 0, 'America/Chicago')
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 6
+    assert "J1" in ready_jobs
+    assert "J6" in ready_jobs
+    assert "J7" in ready_jobs
+    assert "J8" in ready_jobs
+    assert "J9" in ready_jobs
+    assert "J10" in ready_jobs
+
+
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 7
+    assert "J1" in ready_jobs
+    assert "J2" in ready_jobs
+    assert "J6" in ready_jobs
+    assert "J7" in ready_jobs
+    assert "J8" in ready_jobs
+    assert "J9" in ready_jobs
+    assert "J10" in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J1.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J1"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    with open(os.path.join(todays_log_dir, "name.J2.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J2"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 6
+    assert "J3" in ready_jobs
+    assert "J6" in ready_jobs
+    assert "J7" in ready_jobs
+    assert "J8" in ready_jobs
+    assert "J9" in ready_jobs
+    assert "J10" in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J3.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J3"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 7
+    assert "J4" in ready_jobs
+    assert "J5" in ready_jobs
+    assert "J6" in ready_jobs
+    assert "J7" in ready_jobs
+    assert "J8" in ready_jobs
+    assert "J9" in ready_jobs
+    assert "J10" in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J4.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J4"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 6
+    assert 'J4' not in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J5.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J5"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 5
+    assert 'J5' not in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J6.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J6"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 4
+    assert 'J6' not in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J7.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J7"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 3
+    assert 'J7' not in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J8.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J8"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 2
+    assert 'J8' not in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J9.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J9"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 1
+    assert 'J9' not in ready_jobs
+
+    with open(os.path.join(todays_log_dir, "name.J10.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "name"\n')
+        f.write('job_name = "J10"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 0\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 0
+
+
+
 
 
 def test_duplicate_jobs(two_cal_config):

@@ -274,6 +274,9 @@ class Family:
         logged_jobs_list, logged_jobs_dict = pytf.logs.get_logged_job_results(log_dir_to_examine)
 
         for job_name in self.jobs_by_name:
+            if logged_jobs_dict.get(self.name) and logged_jobs_dict[self.name].get(job_name):
+                # already ran, or running
+                continue
             unmet = [True for d in self.jobs_by_name[job_name].dependencies if d.met(logged_jobs_dict) is False]
             if unmet:
                 continue
