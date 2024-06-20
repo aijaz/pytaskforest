@@ -16,6 +16,7 @@ from .external_dependency import ExternalDependency
 from .job import Job
 import pytf.dirs as dirs
 
+
 @define
 class Family:
     """
@@ -52,74 +53,38 @@ class Family:
             start_time_min=0,
             tz=''
         )
+
         lines = family_str.split("\n")
-
         first_line = lines.pop(0)
-        first_line = lower_true_false(first_line)
 
-        first_line_toml_str = f'd = {{ {first_line} }}'
-
-        try:
-            toml_d = tomlkit.loads(first_line_toml_str)
-        except tomlkit.exceptions.UnexpectedEofError as e:
-            raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_FIRST_LINE_PARSE_FAIL} {first_line}") from e
-
-        d = toml_d.get('d')
-
-        cls.validate_inner_params(d)
-
-        fam.start_time_hr, fam.start_time_min = parse_time(d,
-                                                           "",
-                                                           'start',
-                                                           ex.MSG_FAMILY_START_TIME_PARSING_FAILED)
-        fam.tz = d.get('tz')
-        fam.queue = d.get('queue')
-        fam.retry_email = d.get('retry_email')
-        fam.email = d.get('email')
-        fam.retry_success_email = d.get('retry_success-email')
-        fam.no_retry_email = d.get('no_retry_email')
-        fam.no_retry_success_email = d.get('no_retry_success_email')
-        fam.comment = d.get('comment')
-
-        if d.get('calendar'):
-            calendar_name = d['calendar']
-            try:
-                rules = config['calendars'][calendar_name]
-            except KeyError as e:
-                raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_UNKNOWN_CALENDAR} {calendar_name}") from e
-
-            fam.calendar_or_days = Calendar(calendar_name, rules=rules)
-        elif d.get('days'):
-            fam.calendar_or_days = Days(days=d['days'])
-        else:
-            fam.calendar_or_days = Days(days=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+        d = cls._dictionary_from_first_line(first_line)
+        cls._validate_inner_params(d)
+        cls._populate_family_attrs_from_dict(config, fam, d)
 
         # parse the rest of the lines
+        cls._populate_family_forests(config, fam, family_name, lines)
+
+        cls._set_jobs_by_name(fam)
+
+        return fam
+
+    @classmethod
+    def _set_jobs_by_name(cls, fam):
+        internal_jobs = fam.get_all_internal_jobs()
+        for job in internal_jobs:
+            if fam.jobs_by_name.get(job.job_name):
+                raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_JOB_TWICE} {fam.name}::{job.job_name}")
+            fam.jobs_by_name[job.job_name] = job
+
+    @classmethod
+    def _populate_family_forests(cls, config, fam, family_name, lines):
         fam.forests = [Forest(jobs=[])]
-        strip_comments_pattern = re.compile('#.*')
-        dashes_pattern = re.compile('^[- ]+$')
 
-        for line in lines:
-            line = re.sub(strip_comments_pattern, '', line).strip()
-            if not line:
-                continue
-
-            if dashes_pattern.match(line):
-                # new family
-                if len(fam.forests[-1].jobs) > 0:
-                    fam.forests.append(Forest(jobs=[]))
-                continue
-
-            # now we have a line of jobs
-            jobs = Forest.split_jobs(line)
-            for job in jobs:
-                job.family_name = job.family_name or family_name # don't change family name for external dependencies
-            fam.forests[-1].jobs.append(jobs)
+        cls._create_forests_from_ines(fam, family_name, lines)
 
         # get rid of last forest if it has no jobs
         if len(fam.forests[-1].jobs) == 0:
             fam.forests.pop()
-
         # set up dependencies
         for forest in fam.forests:
             last_job_dependency_set = set()
@@ -139,22 +104,119 @@ class Family:
 
                 # update last_job_dependency_set
                 last_job_dependency_set = {
-                        JobDependency(config, fam.name, i.job_name)
-                        if isinstance(i, JobDependency)
-                        else JobDependency(config, i.family_name, i.job_name)
+                    JobDependency(config, fam.name, i.job_name)
+                    if isinstance(i, JobDependency)
+                    else JobDependency(config, i.family_name, i.job_name)
                     for i in job_line
                 }
 
-        internal_jobs = fam.get_all_internal_jobs()
-        for job in internal_jobs:
-            if fam.jobs_by_name.get(job.job_name):
-                raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_JOB_TWICE} {fam.name}::{job.job_name}")
-            fam.jobs_by_name[job.job_name] = job
+    @classmethod
+    def _create_forests_from_ines(cls, fam, family_name, lines):
+        comments_pattern = re.compile(r'#.*$')
+        dashes_pattern = re.compile('^[- ]+$')
 
-        return fam
+        non_comment_lines = map(lambda x: re.sub(comments_pattern, '', x).strip(), lines)
+        non_blank_non_comment_lines = filter(lambda x: x, non_comment_lines)
+        for line in non_blank_non_comment_lines:
+
+            if dashes_pattern.match(line):
+                # new forest
+                # only create a new forest if the last forest has 1 or more jobs
+                if len(fam.forests[-1].jobs) > 0:
+                    fam.forests.append(Forest(jobs=[]))
+                continue
+
+            # now we have a line of jobs
+            jobs = Forest.split_jobs(line, family_name)
+            # named_jobs = map(lambda j: cls._assign_family_name_to_internal_job(j, family_name), jobs)
+            fam.forests[-1].jobs.append(list(jobs))
 
     @classmethod
-    def validate_inner_params(cls, d):
+    def _populate_family_attrs_from_dict(cls, config, fam, d):
+        fam.start_time_hr, fam.start_time_min = parse_time(d,
+                                                           "",
+                                                           'start',
+                                                           ex.MSG_FAMILY_START_TIME_PARSING_FAILED)
+        fam.tz = d.get('tz')
+        fam.queue = d.get('queue')
+        fam.retry_email = d.get('retry_email')
+        fam.email = d.get('email')
+        fam.retry_success_email = d.get('retry_success-email')
+        fam.no_retry_email = d.get('no_retry_email')
+        fam.no_retry_success_email = d.get('no_retry_success_email')
+        fam.comment = d.get('comment')
+        if d.get('calendar'):
+            calendar_name = d['calendar']
+            try:
+                rules = config['calendars'][calendar_name]
+            except KeyError as e:
+                raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_UNKNOWN_CALENDAR} {calendar_name}") from e
+
+            fam.calendar_or_days = Calendar(calendar_name, rules=rules)
+        elif d.get('days'):
+            fam.calendar_or_days = Days(days=d['days'])
+        else:
+            fam.calendar_or_days = Days(days=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+
+    @classmethod
+    def _dictionary_from_first_line(cls, first_line):
+        first_line = lower_true_false(first_line)
+        first_line_toml_str = f'd = {{ {first_line} }}'
+        try:
+            toml_d = tomlkit.loads(first_line_toml_str)
+        except tomlkit.exceptions.UnexpectedEofError as e:
+            raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_FIRST_LINE_PARSE_FAIL} {first_line}") from e
+        return toml_d.get('d')
+
+    @classmethod
+    def _validate_inner_params(cls, d):
+        cls.confirm_all_keys_are_known(d)
+        cls.validate_string_params(d)
+        cls.validate_string_list_params(d)
+        cls.validate_bool_params(d)
+
+        if d.get('calendar') and d.get('days'):
+            raise ex.PyTaskforestParseException(ex.MSG_FAMILY_CAL_AND_DAYS)
+
+    @classmethod
+    def validate_bool_params(cls, d):
+        bools = [
+            'no_retry_email',
+            'no_retry_success_email',
+        ]
+        for key in bools:
+            if key in d and type(d[key]) is not bool:
+                raise ex.PyTaskforestParseException(
+                    f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]}) is type {simple_type(d[key])}")
+
+    @classmethod
+    def validate_string_list_params(cls, d):
+        str_lists = [
+            'days',
+        ]
+        for key in [i for i in str_lists if i in d]:
+            for i in d[key]:
+                if type(i) is not tomlkit.items.String:
+                    raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]} :: {i})")
+
+    @classmethod
+    def validate_string_params(cls, d):
+        strs = [
+            'tz',
+            'queue',
+            'email',
+            'retry_email',
+            'retry_success-email',
+            'comment',
+            'calendar',
+        ]
+        for key in strs:
+            if key in d and type(d[key]) is not tomlkit.items.String:
+                raise ex.PyTaskforestParseException(
+                    f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]}) is type {simple_type(d[key])}")
+
+    @classmethod
+    def confirm_all_keys_are_known(cls, d):
         valid_keys = [
             'start',
             'tz',
@@ -171,44 +233,6 @@ class Family:
         for key in d:
             if key not in valid_keys:
                 raise (ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_UNRECOGNIZED_PARAM}: {key}"))
-
-        strs = [
-            'tz',
-            'queue',
-            'email',
-            'retry_email',
-            'retry_success-email',
-            'comment',
-            'calendar',
-        ]
-
-        str_lists = [
-            'days',
-        ]
-
-        bools = [
-            'no_retry_email',
-            'no_retry_success_email',
-        ]
-
-        for key in strs:
-            if key in d and type(d[key]) is not tomlkit.items.String:
-                raise ex.PyTaskforestParseException(
-                    f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]}) is type {simple_type(d[key])}")
-
-        for key in bools:
-            if key in d and type(d[key]) is not bool:
-                raise ex.PyTaskforestParseException(
-                    f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]}) is type {simple_type(d[key])}")
-
-        for key in str_lists:
-            if key in d:
-                for i in d[key]:
-                    if type(i) is not tomlkit.items.String:
-                        raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_INVALID_TYPE} {key} ({d[key]} :: {i})")
-
-        if d.get('calendar') and d.get('days'):
-            raise ex.PyTaskforestParseException(ex.MSG_FAMILY_CAL_AND_DAYS)
 
     def get_all_internal_jobs(self) -> [Job]:
         result = []

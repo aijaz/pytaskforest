@@ -45,8 +45,6 @@ class Job:
     def _dependencies_default(self):
         return set()
 
-
-
     @classmethod
     def parse(cls, job_string: str):
         j = cls(

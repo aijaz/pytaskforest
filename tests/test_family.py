@@ -56,13 +56,13 @@ def two_cal_config_chicago():
 
 def test_family_split_single():
     line = " J()"
-    jobs = Forest.split_jobs(line)
+    jobs = Forest.split_jobs(line, "")
     assert (len(jobs) == 1)
 
 
 def test_family_split_single_data():
     line = 'J(tz = "GMT", chained=FalSe)'
-    jobs: [Job] = Forest.split_jobs(line)
+    jobs: [Job] = Forest.split_jobs(line, '')
     assert len(jobs) == 1
     assert jobs[0].job_name == 'J'
     assert jobs[0].chained is False
@@ -71,13 +71,13 @@ def test_family_split_single_data():
 
 def test_family_split_double():
     line = 'J() E() # foo'
-    jobs = Forest.split_jobs(line)
+    jobs = Forest.split_jobs(line, '')
     assert (len(jobs) == 2)
 
 
 def test_family_split_double_data():
     line = 'J(tz = "GMT", chained=TRUE) E(tz = "America/Denver", start="0200") # foo'
-    jobs = Forest.split_jobs(line)
+    jobs = Forest.split_jobs(line, '')
     assert (len(jobs) == 2)
 
     assert jobs[0].job_name == 'J'
