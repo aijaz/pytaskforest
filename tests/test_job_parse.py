@@ -32,10 +32,10 @@ def test_job_name_parse(job_str, job_name, exception_str):
     # sourcery skip: no-conditionals-in-tests
     if exception_str:
         with pytest.raises(PyTaskforestParseException) as e:
-            _ = Job.parse(job_str)
+            _ = Job.parse(job_str, "family_name")
         assert e.value.message.startswith(exception_str)
     else:
-        job = Job.parse(job_str)
+        job = Job.parse(job_str, "family_name")
         assert job.job_name == job_name
 
 
@@ -57,10 +57,10 @@ def test_job_start_parse(job_str, hh, mm, exception_str):
     # sourcery skip: no-conditionals-in-tests
     if exception_str:
         with pytest.raises(PyTaskforestParseException) as e:
-            _ = Job.parse(job_str)
+            _ = Job.parse(job_str, "family_name")
         assert e.value.message.startswith(exception_str)
     else:
-        job = Job.parse(job_str)
+        job = Job.parse(job_str, "family_name")
         assert job.start_time_hr == hh
         assert job.start_time_min == mm
 
@@ -83,10 +83,10 @@ def test_job_until_parse(job_str, hh, mm, exception_str):
     # sourcery skip: no-conditionals-in-tests
     if exception_str:
         with pytest.raises(PyTaskforestParseException) as e:
-            _ = Job.parse(job_str)
+            _ = Job.parse(job_str, "family_name")
         assert e.value.message.startswith(exception_str)
     else:
-        job = Job.parse(job_str)
+        job = Job.parse(job_str, "family_name")
         assert job.until_hr == hh
         assert job.until_min == mm
 
@@ -106,7 +106,7 @@ job_invalid_parameters = [
 def test_job_invalid_parse(job_str):
     # sourcery skip: no-conditionals-in-tests
     with pytest.raises(PyTaskforestParseException) as e:
-        _ = Job.parse(job_str)
+        _ = Job.parse(job_str, "family_name")
     assert e.value.message.startswith(MSG_UNRECOGNIZED_PARAM)
 
 
@@ -126,6 +126,6 @@ job_invalid_type_parameters = [
                          )
 def test_job_invalid_type(job_str, message_end):
     with pytest.raises(PyTaskforestParseException) as e:
-        _ = Job.parse(job_str)
+        _ = Job.parse(job_str, "family_name")
     assert e.value.message.startswith(MSG_INVALID_TYPE)
     assert e.value.message.endswith(message_end)

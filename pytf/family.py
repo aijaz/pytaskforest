@@ -38,6 +38,7 @@ class Family:
     forests: [Forest] = field(default=None)
     comment: str | None = field(default=None)
     jobs_by_name: dict = field()
+    
     @jobs_by_name.default
     def _jobs_by_name_default(self):
         return {}

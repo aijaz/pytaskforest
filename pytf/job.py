@@ -46,9 +46,10 @@ class Job:
         return set()
 
     @classmethod
-    def parse(cls, job_string: str):
+    def parse(cls, job_string: str, family_name: str):
         j = cls(
-            job_name=""
+            job_name="",
+            family_name=family_name
         )
         pattern = re.compile('([0-9A-Za-z_]+)\\((.*)\\)')
         match = pattern.match(job_string)
