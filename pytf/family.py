@@ -41,7 +41,7 @@ class Family:
     forests: [Forest] = field(default=None)
     comment: str | None = field(default=None)
     jobs_by_name: dict = field()
-    
+
     @jobs_by_name.default
     def _jobs_by_name_default(self):
         return {}
@@ -64,10 +64,10 @@ class Family:
 
         d = cls._dictionary_from_first_line(first_line)
         cls._validate_inner_params(d)
-        cls._populate_family_attrs_from_dict(config, fam, d)
+        cls._populate_family_attrs_from_dict(fam, d)
 
         # parse the rest of the lines
-        cls._populate_family_forests(config, fam, family_name, lines)
+        cls._populate_family_forests(fam, family_name, lines)
 
         cls._set_jobs_by_name(fam)
 
@@ -82,7 +82,7 @@ class Family:
             fam.jobs_by_name[job.job_name] = job
 
     @classmethod
-    def _populate_family_forests(cls, config, fam, family_name, lines):
+    def _populate_family_forests(cls, fam, family_name, lines):
         fam.forests = [Forest(jobs=[])]
 
         cls._create_forests_from_lines(fam, family_name, lines)
@@ -90,19 +90,19 @@ class Family:
         # get rid of last forest if it has no jobs
         if len(fam.forests[-1].jobs) == 0:
             fam.forests.pop()
-            
+
         # set up dependencies
         for forest in fam.forests:
-            cls._setup_forest_dependencies(config, fam, forest)
+            cls._setup_forest_dependencies(fam, forest)
 
     @classmethod
-    def _setup_forest_dependencies(cls, config, fam, forest):
+    def _setup_forest_dependencies(cls, fam, forest):
         last_job_dependency_set = set()
         for job_line in forest.jobs:
-            last_job_dependency_set = cls._create_dependencies_for_job_line(config, fam, job_line, last_job_dependency_set)
+            last_job_dependency_set = cls._create_dependencies_for_job_line(fam, job_line, last_job_dependency_set)
 
     @classmethod
-    def _create_dependencies_for_job_line(cls, config, fam, job_line, last_job_dependency_set) -> set:
+    def _create_dependencies_for_job_line(cls, fam, job_line, last_job_dependency_set) -> set:
         for job_or_external_dependency in job_line:
             if not isinstance(job_or_external_dependency, Job):
                 continue
@@ -111,26 +111,26 @@ class Family:
             job_or_external_dependency.dependencies = set(last_job_dependency_set)
 
             # add time dependencies
-            cls._add_time_dependencies_for_job(config, fam, job_or_external_dependency)
+            cls._add_time_dependencies_for_job(fam, job_or_external_dependency)
 
         # return new last_job_dependency_set
         return {
-            JobDependency(config, fam.name, i.job_name)
+            JobDependency(fam.config, fam.name, i.job_name)
             if isinstance(i, JobDependency)
-            else JobDependency(config, i.family_name, i.job_name)
+            else JobDependency(fam.config, i.family_name, i.job_name)
             for i in job_line
         }
 
     @classmethod
-    def _add_time_dependencies_for_job(cls, config, fam, job: Job):
+    def _add_time_dependencies_for_job(cls, fam, job: Job):
 
         if job.start_time_hr is not None and job.start_time_min is not None:
-            tz = job.tz or fam.tz or config.primary_tz
-            job.dependencies.add(TimeDependency(config, job.start_time_hr, job.start_time_min, tz))
+            tz = job.tz or fam.tz or fam.config.primary_tz
+            job.dependencies.add(TimeDependency(fam.config, job.start_time_hr, job.start_time_min, tz))
 
         if fam.start_time_hr is not None and fam.start_time_min is not None:
-            tz = fam.tz or config.primary_tz
-            job.dependencies.add(TimeDependency(config, fam.start_time_hr, fam.start_time_min, tz))
+            tz = fam.tz or fam.config.primary_tz
+            job.dependencies.add(TimeDependency(fam.config, fam.start_time_hr, fam.start_time_min, tz))
 
     @classmethod
     def _create_forests_from_lines(cls, fam, family_name, lines):
@@ -154,7 +154,7 @@ class Family:
             fam.forests[-1].jobs.append(list(jobs))
 
     @classmethod
-    def _populate_family_attrs_from_dict(cls, config, fam, d):
+    def _populate_family_attrs_from_dict(cls, fam, d):
         fam.start_time_hr, fam.start_time_min = parse_time(d,
                                                            "",
                                                            'start',
@@ -170,7 +170,7 @@ class Family:
         if d.get('calendar'):
             calendar_name = d['calendar']
             try:
-                rules = config['calendars'][calendar_name]
+                rules = fam.config['calendars'][calendar_name]
             except KeyError as e:
                 raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_UNKNOWN_CALENDAR} {calendar_name}") from e
 
@@ -282,9 +282,7 @@ class Family:
         return result
 
 
-
 def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
     files = dirs.text_files_in_dir(family_dir, config.ignore_regex)
     files.sort(key=lambda tup: tup[0])
     return [Family.parse(family_name=item[0], family_str=item[1], config=config) for item in files]
-
