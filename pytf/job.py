@@ -93,6 +93,67 @@ class Job:
 
     @classmethod
     def validate_inner_params(cls, d, job_name):
+        cls.validate_keys(d, job_name)
+
+        cls.validate_strs(d, job_name)
+
+        cls.validate_ints(d, job_name)
+
+        cls.validate_bools(d, job_name)
+
+        cls.validate_str_lists(d, job_name)
+
+    @classmethod
+    def validate_str_lists(cls, d, job_name):
+        str_lists = [
+            'token',
+        ]
+        for key in [k for k in str_lists if k in d]:
+            for i in d[key]:
+                if type(i) is not tomlkit.items.String:
+                    raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]} :: {i})")
+
+    @classmethod
+    def validate_bools(cls, d, job_name):
+        bools = [
+            'chained',
+            'no_retry_email',
+            'no_retry_success_email',
+        ]
+        for key in bools:
+            if key in d and type(d[key]) is not bool:
+                raise ex.PyTaskforestParseException(
+                    f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+
+    @classmethod
+    def validate_strs(cls, d, job_name):
+        strs = [
+            'tz',
+            'queue',
+            'email',
+            'retry_email',
+            'retry_success-email',
+            'comment',
+        ]
+        for key in strs:
+            if key in d and type(d[key]) is not tomlkit.items.String:
+                raise ex.PyTaskforestParseException(
+                    f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+
+    @classmethod
+    def validate_ints(cls, d, job_name):
+        ints = [
+            'every',
+            'num_retries',
+            'retry_sleep_min',
+        ]
+        for key in ints:
+            if key in d and type(d[key]) is not tomlkit.items.Integer:
+                raise ex.PyTaskforestParseException(
+                    f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
+
+    @classmethod
+    def validate_keys(cls, d, job_name):
         valid_keys = [
             'start',
             'until',
@@ -113,46 +174,3 @@ class Job:
         for key in d:
             if key not in valid_keys:
                 raise (ex.PyTaskforestParseException(f"{ex.MSG_UNRECOGNIZED_PARAM}: {job_name}/{key}"))
-
-        strs = [
-            'tz',
-            'queue',
-            'email',
-            'retry_email',
-            'retry_success-email',
-            'comment',
-        ]
-
-        ints = [
-            'every',
-            'num_retries',
-            'retry_sleep_min',
-        ]
-
-        bools = [
-            'chained',
-            'no_retry_email',
-            'no_retry_success_email',
-        ]
-
-        str_lists = [
-            'token',
-        ]
-
-        for key in strs:
-            if key in d and type(d[key]) is not tomlkit.items.String:
-                raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
-
-        for key in ints:
-            if key in d and type(d[key]) is not tomlkit.items.Integer:
-                raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
-
-        for key in bools:
-            if key in d and type(d[key]) is not bool:
-                raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is type {simple_type(d[key])}")
-
-        for key in str_lists:
-            if key in d:
-                for i in d[key]:
-                    if type(i) is not tomlkit.items.String:
-                        raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]} :: {i})")
