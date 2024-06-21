@@ -33,10 +33,10 @@ def get_logged_job_results(log_dir: str) -> ([JobResult], dict[str, object]):
 
         job_result = JobResult(family_name=job_info['family_name'],
                                job_name=job_info['job_name'],
-                               tz=job_info['tz'],
+                               status=status,
+                               tz=job_info['tz'],  # this will always be config.primary_tz
                                queue_name=job_info['queue_name'],
                                worker_name=job_info['worker_name'],
-                               status=status,
                                error_code=error_code,
                                start_time=job_info["start_time"],
                                )

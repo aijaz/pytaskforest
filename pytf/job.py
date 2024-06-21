@@ -25,7 +25,7 @@ class Job:
     token: list[str] | None = field(default=None)
     num_retries: int | None = field(default=None)
     retry_sleep_min: int | None = field(default=None)
-    queue: str | None = field(default=None)
+    queue: str | None = field(default="default")
     email: str | None = field(default=None)
     retry_email: str | None = field(default=None)
     retry_success_email: str | None = field(default=None)

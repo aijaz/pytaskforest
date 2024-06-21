@@ -1,3 +1,4 @@
+import json
 import os
 
 import pytest
@@ -13,7 +14,7 @@ from pytf.calendar import Calendar
 from pytf.job import Job
 from pytf.mockdatetime import MockDateTime
 from pytf.config import Config
-import pytf.logs
+from pytf.status import status
 
 
 @pytest.fixture
@@ -659,7 +660,12 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
      J10()
     """
     MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
-    two_cal_config_chicago.log_dir = tmp_path
+    two_cal_config_chicago.log_dir = os.path.join(tmp_path, 'log_dir')
+    two_cal_config_chicago.family_dir = os.path.join(tmp_path, 'family_dir')
+    dated_family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now(tz="America/Chicago"))
+    dirs.make_dir(dated_family_dir)
+    with open(os.path.join(dated_family_dir, "name"), "w") as f:
+        f.write(family_str)
     todays_log_dir = dirs.todays_log_dir(two_cal_config_chicago)
     dirs.make_dir(todays_log_dir)
     fam = Family.parse("name", family_str, two_cal_config_chicago)
@@ -727,6 +733,8 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J10'].dependencies)
     assert (ExternalDependency('F3', 'JB') in fam.jobs_by_name['J10'].dependencies)
     assert (ExternalDependency('F4', 'JC') in fam.jobs_by_name['J10'].dependencies)
+
+    # print(json.dumps(status(two_cal_config_chicago), indent=4))
 
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 4
@@ -936,9 +944,6 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
 
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 0
-
-
-
 
 
 def test_duplicate_jobs(two_cal_config):
