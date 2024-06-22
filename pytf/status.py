@@ -12,11 +12,11 @@ from .logs import get_logged_job_results
 from .mockdatetime import MockDateTime
 
 
-def status(config: Config, dt: datetime.datetime=None):
+def status(config: Config, dt: datetime.datetime = None):
     if dt is None:
         dt = MockDateTime.now(config.primary_tz)
 
-    result = { "status" : { "flat_list": [], "family" : {}}}
+    result = {"status": {"flat_list": [], "family": {}}}
 
     # To see what's run, don't consult families. Things might have changed.
     # Look at the log dir
