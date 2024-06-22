@@ -17,6 +17,22 @@ from pytf.status import status
 
 
 @pytest.fixture
+def three_forest_family():
+    return """start="0214", tz = "GMT", queue="main", email="a@b.c"
+
+    J1() J2() # bar
+    # foo
+      J3() # foo
+    J4() J5()
+    ---
+    # foo
+    J6()  J7() J8() J9()
+     - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
+     J10()
+    """
+
+
+@pytest.fixture
 def family_two_forests():
     return """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
@@ -278,23 +294,26 @@ def test_family_line_one_success_no_cal_days_days(two_cal_config):
     assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 
+def test_full_family_line_one_forest_name(two_cal_config, single_forest_family):
+    fam = Family.parse("single_forest_family", single_forest_family, config=two_cal_config)
+    assert fam.forests[0].jobs[0][0].family_name == 'single_forest_family'
+
+
 def test_full_family_line_one_forest_num_forests(two_cal_config, single_forest_family):
     fam = Family.parse("single_forest_family", single_forest_family, config=two_cal_config)
     assert len(fam.forests) == 1
 
 
-def test_full_family_line_one_forest_jobs(two_cal_config, single_forest_family):
+def test_full_family_line_one_forest_num_forest_lines(two_cal_config, single_forest_family):
     fam = Family.parse("single_forest_family", single_forest_family, config=two_cal_config)
     assert len(fam.forests[0].jobs) == 3
-    assert len(fam.forests[0].jobs[0]) == 2
-    assert len(fam.forests[0].jobs[1]) == 1
-    assert len(fam.forests[0].jobs[2]) == 2
-    assert fam.forests[0].jobs[0][0].job_name == 'J1'
-    assert fam.forests[0].jobs[0][0].family_name == 'single_forest_family'
-    assert fam.forests[0].jobs[0][1].job_name == 'J2'
-    assert fam.forests[0].jobs[1][0].job_name == 'J3'
-    assert fam.forests[0].jobs[2][0].job_name == 'J4'
-    assert fam.forests[0].jobs[2][1].job_name == 'J5'
+
+
+def test_full_family_line_one_forest_jobs(two_cal_config, single_forest_family):
+    fam = Family.parse("single_forest_family", single_forest_family, config=two_cal_config)
+    assert [x.job_name for x in fam.forests[0].jobs[0]] == ['J1', 'J2']
+    assert [x.job_name for x in fam.forests[0].jobs[1]] == ['J3']
+    assert [x.job_name for x in fam.forests[0].jobs[2]] == ['J4', 'J5']
 
 
 def test_full_family_line_one_forest_dependencies(two_cal_config, single_forest_family):
@@ -336,15 +355,9 @@ def test_full_family_line_one_forest_plus_one_empty_unmet_jobs(two_cal_config, t
     dirs.make_dir(todays_log_dir)
     fam = Family.parse("f1_name", f1_name_family_str, config=two_cal_config)
 
-    assert len(fam.forests[0].jobs) == 3
-    assert len(fam.forests[0].jobs[0]) == 2
-    assert len(fam.forests[0].jobs[1]) == 1
-    assert len(fam.forests[0].jobs[2]) == 2
-    assert fam.forests[0].jobs[0][0].job_name == 'J1'
-    assert fam.forests[0].jobs[0][1].job_name == 'J2'
-    assert fam.forests[0].jobs[1][0].job_name == 'J3'
-    assert fam.forests[0].jobs[2][0].job_name == 'J4'
-    assert fam.forests[0].jobs[2][1].job_name == 'J5'
+    assert [x.job_name for x in fam.forests[0].jobs[0]] == ['J1', 'J2']
+    assert [x.job_name for x in fam.forests[0].jobs[1]] == ['J3']
+    assert [x.job_name for x in fam.forests[0].jobs[2]] == ['J4', 'J5']
 
 
 def test_full_family_line_one_forest_plus_one_empty_unmet_dependencies(two_cal_config, tmp_path, f1_name_family_str):
@@ -399,52 +412,38 @@ def test_full_family_line_two_forests_forests(two_cal_config, family_two_forests
     assert len(fam.forests) == 2
 
 
-def test_full_family_line_two_forests_jobs(two_cal_config, family_two_forests):
+def test_full_family_line_two_forests_job_lines(two_cal_config, family_two_forests):
     fam = Family.parse("name", family_two_forests, config=two_cal_config)
     assert len(fam.forests[0].jobs) == 3
-    assert len(fam.forests[0].jobs[0]) == 2
-    assert len(fam.forests[0].jobs[1]) == 1
-    assert len(fam.forests[0].jobs[2]) == 2
-    assert fam.forests[0].jobs[0][0].job_name == 'J1'
-    assert fam.forests[0].jobs[0][1].job_name == 'J2'
-    assert fam.forests[0].jobs[1][0].job_name == 'J3'
-    assert fam.forests[0].jobs[2][0].job_name == 'J4'
-    assert fam.forests[0].jobs[2][1].job_name == 'J5'
     assert len(fam.forests[1].jobs) == 1
-    assert len(fam.forests[1].jobs[0]) == 4
-    assert fam.forests[1].jobs[0][0].job_name == 'J6'
-    assert fam.forests[1].jobs[0][1].job_name == 'J7'
-    assert fam.forests[1].jobs[0][2].job_name == 'J8'
-    assert fam.forests[1].jobs[0][3].job_name == 'J9'
+
+
+def test_full_family_line_two_forests_jobs(two_cal_config, family_two_forests):
+    fam = Family.parse("name", family_two_forests, config=two_cal_config)
+    assert [x.job_name for x in fam.forests[0].jobs[0]] == ['J1', 'J2']
+    assert [x.job_name for x in fam.forests[0].jobs[1]] == ['J3']
+    assert [x.job_name for x in fam.forests[0].jobs[2]] == ['J4', 'J5']
+    assert [x.job_name for x in fam.forests[1].jobs[0]] == ['J6', 'J7', 'J8', 'J9']
 
 
 def test_full_family_line_two_forests_dependencies(two_cal_config, family_two_forests):
     fam = Family.parse("name", family_two_forests, config=two_cal_config)
-    assert len(fam.jobs_by_name['J1'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J1'].dependencies)
-    assert len(fam.jobs_by_name['J2'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J2'].dependencies)
-    assert len(fam.jobs_by_name['J3'].dependencies) == 3
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J3'].dependencies)
-    assert (JobDependency(two_cal_config, 'name', 'J1') in fam.jobs_by_name['J3'].dependencies)
-    assert (JobDependency(two_cal_config, 'name', 'J2') in fam.jobs_by_name['J3'].dependencies)
-    assert len(fam.jobs_by_name['J4'].dependencies) == 2
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J4'].dependencies)
-    assert (JobDependency(two_cal_config, 'name', 'J3') in fam.jobs_by_name['J4'].dependencies)
-    assert len(fam.jobs_by_name['J5'].dependencies) == 2
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J5'].dependencies)
-    assert (JobDependency(two_cal_config, 'name', 'J3') in fam.jobs_by_name['J5'].dependencies)
-    assert len(fam.jobs_by_name['J6'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J6'].dependencies)
-    assert len(fam.jobs_by_name['J7'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J7'].dependencies)
-    assert len(fam.jobs_by_name['J8'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J8'].dependencies)
-    assert len(fam.jobs_by_name['J9'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J9'].dependencies)
+    assert fam.jobs_by_name['J1'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT')}
+    assert fam.jobs_by_name['J2'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT')}
+    assert fam.jobs_by_name['J3'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT'),
+                                                   JobDependency(two_cal_config, 'name', 'J1'),
+                                                   JobDependency(two_cal_config, 'name', 'J2')}
+    assert fam.jobs_by_name['J4'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT'),
+                                                   JobDependency(two_cal_config, 'name', 'J3')}
+    assert fam.jobs_by_name['J5'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT'),
+                                                   JobDependency(two_cal_config, 'name', 'J3')}
+    assert fam.jobs_by_name['J6'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT')}
+    assert fam.jobs_by_name['J7'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT')}
+    assert fam.jobs_by_name['J8'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT')}
+    assert fam.jobs_by_name['J9'].dependencies == {TimeDependency(two_cal_config, 2, 14, 'GMT')}
 
 
-def test_full_family_line_two_forests_with_one_empty_one(two_cal_config):
+def test_full_family_line_two_forests_with_empty_ones_num_forests(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     J1() J2() # bar
@@ -458,54 +457,32 @@ def test_full_family_line_two_forests_with_one_empty_one(two_cal_config):
     J6()  J7() J8() J9()
     """
     fam = Family.parse("name", family_str, two_cal_config)
-    assert fam.start_time_hr == 2
-    assert fam.start_time_min == 14
-    assert fam.tz == 'GMT'
-    assert fam.queue == 'main'
-    assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Days)
-    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     assert len(fam.forests) == 2
-    assert len(fam.forests[0].jobs) == 3
-    assert len(fam.forests[0].jobs[0]) == 2
-    assert len(fam.forests[0].jobs[1]) == 1
-    assert len(fam.forests[0].jobs[2]) == 2
-    assert fam.forests[0].jobs[0][0].job_name == 'J1'
-    assert fam.forests[0].jobs[0][1].job_name == 'J2'
-    assert fam.forests[0].jobs[1][0].job_name == 'J3'
-    assert fam.forests[0].jobs[2][0].job_name == 'J4'
-    assert fam.forests[0].jobs[2][1].job_name == 'J5'
+
+
+def test_full_family_line_two_forests_with_empty_ones_jobs(two_cal_config):
+    family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
+
+    J1() J2() # bar
+    # foo
+      J3() # foo
+    J4() J5()
+    ---
+    ---
+    -----
+    # foo
+    J6()  J7() J8() J9()
+    """
+    fam = Family.parse("name", family_str, two_cal_config)
     assert len(fam.forests[1].jobs) == 1
     assert len(fam.forests[1].jobs[0]) == 4
     assert fam.forests[1].jobs[0][0].job_name == 'J6'
     assert fam.forests[1].jobs[0][1].job_name == 'J7'
     assert fam.forests[1].jobs[0][2].job_name == 'J8'
     assert fam.forests[1].jobs[0][3].job_name == 'J9'
-    assert len(fam.jobs_by_name['J1'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J1'].dependencies)
-    assert len(fam.jobs_by_name['J2'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J2'].dependencies)
-    assert len(fam.jobs_by_name['J3'].dependencies) == 3
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J3'].dependencies)
-    assert (JobDependency(two_cal_config, 'name', 'J1') in fam.jobs_by_name['J3'].dependencies)
-    assert (JobDependency(two_cal_config, 'name', 'J2') in fam.jobs_by_name['J3'].dependencies)
-    assert len(fam.jobs_by_name['J4'].dependencies) == 2
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J4'].dependencies)
-    assert (JobDependency(two_cal_config, 'name', 'J3') in fam.jobs_by_name['J4'].dependencies)
-    assert len(fam.jobs_by_name['J5'].dependencies) == 2
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J5'].dependencies)
-    assert (JobDependency(two_cal_config, 'name', 'J3') in fam.jobs_by_name['J5'].dependencies)
-    assert len(fam.jobs_by_name['J6'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J6'].dependencies)
-    assert len(fam.jobs_by_name['J7'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J7'].dependencies)
-    assert len(fam.jobs_by_name['J8'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J8'].dependencies)
-    assert len(fam.jobs_by_name['J9'].dependencies) == 1
-    assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J9'].dependencies)
 
 
-def test_full_family_line_three_forests(two_cal_config):
+def test_full_family_line_three_forests_num_families(two_cal_config):
     family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
 
     J1() J2() # bar
@@ -519,24 +496,23 @@ def test_full_family_line_three_forests(two_cal_config):
      J10()
     """
     fam = Family.parse("name", family_str, two_cal_config)
-    assert fam.start_time_hr == 2
-    assert fam.start_time_min == 14
-    assert fam.tz == 'GMT'
-    assert fam.queue == 'main'
-    assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Days)
-    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     assert len(fam.forests) == 3
-    assert len(fam.forests[0].jobs) == 3
-    assert len(fam.forests[0].jobs[0]) == 2
-    assert len(fam.forests[0].jobs[1]) == 1
-    assert len(fam.forests[0].jobs[2]) == 2
-    assert fam.forests[0].jobs[0][0].job_name == 'J1'
-    assert fam.forests[0].jobs[0][1].job_name == 'J2'
-    assert fam.forests[0].jobs[1][0].job_name == 'J3'
-    assert fam.forests[0].jobs[2][0].job_name == 'J4'
-    assert fam.forests[0].jobs[2][1].job_name == 'J5'
-    assert len(fam.forests[1].jobs) == 1
+
+
+def test_full_family_line_three_forests_jobs(two_cal_config):
+    family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
+
+    J1() J2() # bar
+    # foo
+      J3() # foo
+    J4() J5()
+    ---
+    # foo
+    J6()  J7() J8() J9()
+     - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
+     J10()
+    """
+    fam = Family.parse("name", family_str, two_cal_config)
     assert len(fam.forests[1].jobs[0]) == 4
     assert fam.forests[1].jobs[0][0].job_name == 'J6'
     assert fam.forests[1].jobs[0][1].job_name == 'J7'
@@ -545,6 +521,22 @@ def test_full_family_line_three_forests(two_cal_config):
     assert len(fam.forests[2].jobs) == 1
     assert len(fam.forests[2].jobs[0]) == 1
     assert fam.forests[2].jobs[0][0].job_name == 'J10'
+
+
+def test_full_family_line_three_forests_dependencies(two_cal_config):
+    family_str = """start="0214", tz = "GMT", queue="main", email="a@b.c"
+
+    J1() J2() # bar
+    # foo
+      J3() # foo
+    J4() J5()
+    ---
+    # foo
+    J6()  J7() J8() J9()
+     - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
+     J10()
+    """
+    fam = Family.parse("name", family_str, two_cal_config)
     assert len(fam.jobs_by_name['J1'].dependencies) == 1
     assert (TimeDependency(two_cal_config, 2, 14, 'GMT') in fam.jobs_by_name['J1'].dependencies)
     assert len(fam.jobs_by_name['J2'].dependencies) == 1
@@ -910,7 +902,6 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert status_json['status']['flat_list'][11]['status'] == 'Ready'
     assert status_json['status']['flat_list'][12]['status'] == 'Ready'
 
-
     family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
     all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
     assert (not all_families[1].names_of_all_ready_jobs())
@@ -1050,7 +1041,6 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
     assert "J99" in ready_jobs
-
 
     with open(os.path.join(todays_log_dir, "name.J3.q1.w1.20240601010203.info"), "w") as f:
         f.write('family_name = "F1"\n')
