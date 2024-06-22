@@ -26,12 +26,15 @@ def test_time_dependency_met(denver_config):
     assert(d.met() is True)
 
 
-def test_times(denver_config):
+def test_times_denver_chicago(denver_config):
     denver_2 = pytz.timezone("America/Denver").localize(datetime.datetime(2024, 6, 1, 2, 0, 0, 0))
     chicago_3 = pytz.timezone("America/Chicago").localize(datetime.datetime(2024, 6, 1, 3, 0, 0, 0))
-    ny_4 = chicago_3.astimezone(pytz.timezone("America/Chicago"))
-    la_1 = pytz.timezone("America/Los_Angeles").localize(datetime.datetime(2024, 6, 1, 1, 0, 0, 0))
     assert(denver_2.timestamp() == chicago_3.timestamp())
+
+
+def test_times_denver_la(denver_config):
+    denver_2 = pytz.timezone("America/Denver").localize(datetime.datetime(2024, 6, 1, 2, 0, 0, 0))
+    la_1 = pytz.timezone("America/Los_Angeles").localize(datetime.datetime(2024, 6, 1, 1, 0, 0, 0))
     assert(denver_2.timestamp() == la_1.timestamp())
     assert(denver_2 == la_1)
 

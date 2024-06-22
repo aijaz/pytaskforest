@@ -1,6 +1,5 @@
 import os
 import pytest
-import pytz
 
 from pytf.mockdatetime import MockDateTime
 from pytf.dirs import dated_dir

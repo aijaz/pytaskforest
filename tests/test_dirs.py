@@ -1,5 +1,6 @@
 import os
 
+import pathlib
 import pytest
 
 from pytf.dirs import (
@@ -34,9 +35,9 @@ def denver_config():
     """)
 
 
-def test_copy_files_from_dir_to_dir(tmp_path):
-    dir1 = os.path.join(tmp_path, 'dir1')
-    dir2 = os.path.join(tmp_path, 'dir2')
+def _make_files_in_dir1(p):
+    dir1 = os.path.join(p, 'dir1')
+    dir2 = os.path.join(p, 'dir2')
     os.makedirs(dir1)
     os.makedirs(dir2)
 
@@ -48,27 +49,30 @@ def test_copy_files_from_dir_to_dir(tmp_path):
         f.write("This is line 1 of f2\n")
         f.write("This is line 2 of f2\n")
 
+    return dir1, dir2
+
+
+def test_copy_files_from_dir_to_dir_len(tmp_path):
+    dir1, dir2 = _make_files_in_dir1(tmp_path)
+
     copy_files_from_dir_to_dir(dir1, dir2)
 
     dir1_files = os.listdir(dir1)
     dir2_files = os.listdir(dir2)
     assert (len(dir1_files) == len(dir2_files))
 
-    with open(os.path.join(dir2, "f1")) as f:
-        f1 = f.readlines()
 
-    with open(os.path.join(dir2, "f2")) as f:
-        f2 = f.readlines()
+def test_copy_files_from_dir_to_dir_contents(tmp_path):
+    dir1, dir2 = _make_files_in_dir1(tmp_path)
 
-    assert (f1[0] == "This is line 1 of f1\n")
-    assert (f1[1] == "This is line 2 of f1\n")
+    copy_files_from_dir_to_dir(dir1, dir2)
 
-    assert (f2[0] == "This is line 1 of f2\n")
-    assert (f2[1] == "This is line 2 of f2\n")
+    assert (pathlib.Path(os.path.join(dir1, "f1")).read_text() == pathlib.Path(os.path.join(dir2, "f1")).read_text())
+    assert (pathlib.Path(os.path.join(dir1, "f2")).read_text() == pathlib.Path(os.path.join(dir2, "f2")).read_text())
 
 
 def test_does_dir_exist(tmp_path):
-    assert (does_dir_exist(tmp_path))
+    assert (does_dir_exist(str(tmp_path)))
 
 
 def test_dated_dir(tmp_path):
@@ -115,34 +119,34 @@ def test_todays_family_dir(denver_config):
     assert (the_dir == os.path.join("/a/f/", "20240601"))
 
 
-def test_list_of_files_in_dir(tmp_path):
-    with open(os.path.join(tmp_path, 'a'), "w") as f:
+def _create_9_files(p):
+    with open(os.path.join(p, 'a'), "w") as f:
         f.write('a')
-    with open(os.path.join(tmp_path, 's'), "w") as f:
+    with open(os.path.join(p, 's'), "w") as f:
         f.write('s')
-    with open(os.path.join(tmp_path, 'd'), "w") as f:
+    with open(os.path.join(p, 'd'), "w") as f:
         f.write('d')
-    with open(os.path.join(tmp_path, 'f'), "w") as f:
+    with open(os.path.join(p, 'f'), "w") as f:
         f.write('f')
-    with open(os.path.join(tmp_path, 'g'), "w") as f:
+    with open(os.path.join(p, 'g'), "w") as f:
         f.write('g')
-    with open(os.path.join(tmp_path, 'l'), "w") as f:
+    with open(os.path.join(p, 'l'), "w") as f:
         f.write('l')
-    with open(os.path.join(tmp_path, 'k'), "w") as f:
+    with open(os.path.join(p, 'k'), "w") as f:
         f.write('k')
-    with open(os.path.join(tmp_path, 'j'), "w") as f:
+    with open(os.path.join(p, 'j'), "w") as f:
         f.write('j')
-    with open(os.path.join(tmp_path, 'h'), "w") as f:
+    with open(os.path.join(p, 'h'), "w") as f:
         f.write('h')
 
+
+def test_list_of_files_in_dir_len(tmp_path):
+    _create_9_files(tmp_path)
     files = list_of_files_in_dir(str(tmp_path))
     assert len(files) == 9
-    assert files[0] == 'a'
-    assert files[1] == 'd'
-    assert files[2] == 'f'
-    assert files[3] == 'g'
-    assert files[4] == 'h'
-    assert files[5] == 'j'
-    assert files[6] == 'k'
-    assert files[7] == 'l'
-    assert files[8] == 's'
+
+
+def test_list_of_files_in_dir_sort_order(tmp_path):
+    _create_9_files(tmp_path)
+    files = list_of_files_in_dir(str(tmp_path))
+    assert (files == sorted(files))
