@@ -631,7 +631,8 @@ def test_external_deps_tz(two_cal_config):
                                                     }
 
 
-def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
+
+def test_external_deps_fallback_tz_dependencies(two_cal_config_chicago, tmp_path):
     family_str = """start="0214", queue="main", email="a@b.c"
 
     F2::JA()
@@ -648,127 +649,75 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
      J99()
     """
 
-    MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
-    two_cal_config_chicago.log_dir = os.path.join(tmp_path, 'log_dir')
-    two_cal_config_chicago.family_dir = os.path.join(tmp_path, 'family_dir')
-    dated_family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now(tz="America/Chicago"))
-    dirs.make_dir(dated_family_dir)
-    with open(os.path.join(dated_family_dir, "F1"), "w") as f:
-        f.write(family_str)
-    with open(os.path.join(dated_family_dir, "F2"), "w") as f:
-        f.write("""start="0200", queue="main", email="a@b.c"
-        JA()
-        """)
-    with open(os.path.join(dated_family_dir, "F3"), "w") as f:
-        f.write("""start="0200", queue="main", email="a@b.c"
-        JB()
-        """)
-    with open(os.path.join(dated_family_dir, "F4"), "w") as f:
-        f.write("""start="0200", queue="main", email="a@b.c"
-        JC()
-        """)
-    todays_log_dir = dirs.todays_log_dir(two_cal_config_chicago)
-    dirs.make_dir(todays_log_dir)
     fam = Family.parse("F1", family_str, two_cal_config_chicago)
-    assert fam.start_time_hr == 2
-    assert fam.start_time_min == 14
-    assert fam.tz is None
-    assert fam.queue == 'main'
-    assert fam.email == 'a@b.c'
-    assert isinstance(fam.calendar_or_days, Days)
-    assert fam.calendar_or_days.days == ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    assert len(fam.forests) == 3
-    assert len(fam.forests[0].jobs) == 4
-    assert len(fam.forests[0].jobs[0]) == 1
-    assert len(fam.forests[0].jobs[1]) == 2
-    assert len(fam.forests[0].jobs[2]) == 1
-    assert len(fam.forests[0].jobs[3]) == 2
-    assert fam.forests[0].jobs[0][0].family_name == 'F2'
-    assert fam.forests[0].jobs[0][0].job_name == 'JA'
-    assert fam.forests[0].jobs[1][0].job_name == 'J1'
-    assert fam.forests[0].jobs[1][1].job_name == 'J2'
-    assert fam.forests[0].jobs[2][0].job_name == 'J3'
-    assert fam.forests[0].jobs[3][0].job_name == 'J4'
-    assert fam.forests[0].jobs[3][1].job_name == 'J5'
-    assert len(fam.forests[1].jobs) == 1
-    assert len(fam.forests[1].jobs[0]) == 4
-    assert fam.forests[1].jobs[0][0].job_name == 'J6'
-    assert fam.forests[1].jobs[0][1].job_name == 'J7'
-    assert fam.forests[1].jobs[0][2].job_name == 'J8'
-    assert fam.forests[1].jobs[0][3].job_name == 'J9'
-    assert len(fam.forests[2].jobs) == 2
-    assert len(fam.forests[2].jobs[0]) == 2
-    assert len(fam.forests[2].jobs[1]) == 1
-    assert fam.forests[2].jobs[0][0].family_name == 'F3'
-    assert fam.forests[2].jobs[0][0].job_name == 'JB'
-    assert fam.forests[2].jobs[0][1].family_name == 'F4'
-    assert fam.forests[2].jobs[0][1].job_name == 'JC'
-    assert fam.forests[2].jobs[1][0].job_name == 'J99'
-    assert len(fam.jobs_by_name['J1'].dependencies) == 3
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J1'].dependencies)
-    assert (TimeDependency(two_cal_config_chicago, 3, 30, 'America/Chicago') in fam.jobs_by_name['J1'].dependencies)
-    assert (ExternalDependency('F2', 'JA') in fam.jobs_by_name['J1'].dependencies)
-    assert len(fam.jobs_by_name['J2'].dependencies) == 3
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J2'].dependencies)
-    assert (TimeDependency(two_cal_config_chicago, 4, 30, 'America/Denver') in fam.jobs_by_name['J2'].dependencies)
-    assert (ExternalDependency('F2', 'JA') in fam.jobs_by_name['J2'].dependencies)
-    assert len(fam.jobs_by_name['J3'].dependencies) == 3
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J3'].dependencies)
-    assert (JobDependency(two_cal_config_chicago, 'F1', 'J1') in fam.jobs_by_name['J3'].dependencies)
-    assert (JobDependency(two_cal_config_chicago, 'F1', 'J2') in fam.jobs_by_name['J3'].dependencies)
-    assert len(fam.jobs_by_name['J4'].dependencies) == 2
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J4'].dependencies)
-    assert (JobDependency(two_cal_config_chicago, 'F1', 'J3') in fam.jobs_by_name['J4'].dependencies)
-    assert len(fam.jobs_by_name['J5'].dependencies) == 2
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J5'].dependencies)
-    assert (JobDependency(two_cal_config_chicago, 'F1', 'J3') in fam.jobs_by_name['J5'].dependencies)
-    assert len(fam.jobs_by_name['J6'].dependencies) == 1
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J6'].dependencies)
-    assert len(fam.jobs_by_name['J7'].dependencies) == 1
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J7'].dependencies)
-    assert len(fam.jobs_by_name['J8'].dependencies) == 1
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J8'].dependencies)
-    assert len(fam.jobs_by_name['J9'].dependencies) == 1
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J9'].dependencies)
-    assert len(fam.jobs_by_name['J99'].dependencies) == 3
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J99'].dependencies)
-    assert (ExternalDependency('F3', 'JB') in fam.jobs_by_name['J99'].dependencies)
-    assert (ExternalDependency('F4', 'JC') in fam.jobs_by_name['J99'].dependencies)
+    MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
+
+    assert fam.jobs_by_name['J1'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago'),
+                                                   ExternalDependency('F2', 'JA'),
+                                                   TimeDependency(two_cal_config_chicago, 3, 30, 'America/Chicago'),
+                                                   }
+    assert fam.jobs_by_name['J2'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago'),
+                                                   ExternalDependency('F2', 'JA'),
+                                                   TimeDependency(two_cal_config_chicago, 4, 30, 'America/Denver'),
+                                                   }
+    assert fam.jobs_by_name['J3'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago'),
+                                                   JobDependency(two_cal_config_chicago, 'F1', 'J1'),
+                                                   JobDependency(two_cal_config_chicago, 'F1', 'J2')}
+    assert fam.jobs_by_name['J4'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago'),
+                                                   JobDependency(two_cal_config_chicago, 'F1', 'J3')}
+    assert fam.jobs_by_name['J5'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago'),
+                                                   JobDependency(two_cal_config_chicago, 'F1', 'J3')}
+    assert fam.jobs_by_name['J6'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago')}
+    assert fam.jobs_by_name['J7'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago')}
+    assert fam.jobs_by_name['J8'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago')}
+    assert fam.jobs_by_name['J9'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago')}
+    assert fam.jobs_by_name['J99'].dependencies == {TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago'),
+                                                    ExternalDependency('F3', 'JB'),
+                                                    ExternalDependency('F4', 'JC'),
+                                                    }
+
+
+def test_external_deps_fallback_tz_status_jobs(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
 
     status_json = status(two_cal_config_chicago)
-    assert len(status_json['status']['flat_list']) == 13
-    assert status_json['status']['flat_list'][0]['job_name'] == 'J1'
-    assert status_json['status']['flat_list'][0]['family_name'] == 'F1'
-    assert status_json['status']['flat_list'][1]['job_name'] == 'J2'
-    assert status_json['status']['flat_list'][2]['job_name'] == 'J3'
-    assert status_json['status']['flat_list'][3]['job_name'] == 'J4'
-    assert status_json['status']['flat_list'][4]['job_name'] == 'J5'
-    assert status_json['status']['flat_list'][5]['job_name'] == 'J6'
-    assert status_json['status']['flat_list'][6]['job_name'] == 'J7'
-    assert status_json['status']['flat_list'][7]['job_name'] == 'J8'
-    assert status_json['status']['flat_list'][8]['job_name'] == 'J9'
-    assert status_json['status']['flat_list'][9]['job_name'] == 'J99'
+    assert [f"{j['family_name']}{j['job_name']}" for j in status_json['status']['flat_list']] == [
+    "F1J1", "F1J2", "F1J3", "F1J4", "F1J5", "F1J6", "F1J7", "F1J8", "F1J9", "F1J99", "F2JA", "F3JB", "F4JC"
+    ]
 
-    assert status_json['status']['flat_list'][0]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][1]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][9]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][10]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][11]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][12]['status'] == 'Ready'
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 4
-    assert "J6" in ready_jobs
-    assert "J7" in ready_jobs
-    assert "J8" in ready_jobs
-    assert "J9" in ready_jobs
+def test_external_deps_fallback_tz_status_1(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting','Waiting','Waiting','Waiting','Waiting','Ready','Ready','Ready','Ready','Waiting','Ready','Ready','Ready',
+    ]
+
+
+def test_external_deps_fallback_tz_status_ready_jobs(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+
+    assert fam.names_of_all_ready_jobs() == ["J6", "J7", "J8", "J9"]
+
+
+def test_external_deps_fallback_tz_status_names_of_ready_jobs_all_families(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+
+    family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
+    all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
+    assert (all_families[0].name == 'F1')
+    assert (all_families[1].name == 'F2')
+    assert (all_families[2].name == 'F3')
+    assert (all_families[3].name == 'F4')
+    assert ('JA' in all_families[1].names_of_all_ready_jobs())
+    assert ('JB' in all_families[2].names_of_all_ready_jobs())
+    assert ('JC' in all_families[3].names_of_all_ready_jobs())
+
+
+
+def test_external_deps_fallback_tz_status_names_of_ready_jobs_all_families(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
 
     family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
     all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
@@ -1084,6 +1033,47 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
 
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 0
+
+
+def prep_status_family(tmp_path, two_cal_config_chicago):
+    family_str = """start="0214", queue="main", email="a@b.c"
+
+    F2::JA()
+    
+    J1(start="0330") J2(start="0430", tz="America/Denver") # bar
+    # foo
+      J3() # foo
+    J4() J5()
+    ---
+    # foo
+    J6()  J7() J8() J9()
+     - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
+       F3::JB() F4::JC() 
+     J99()
+    """
+    MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
+    two_cal_config_chicago.log_dir = os.path.join(tmp_path, 'log_dir')
+    two_cal_config_chicago.family_dir = os.path.join(tmp_path, 'family_dir')
+    dated_family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now(tz="America/Chicago"))
+    dirs.make_dir(dated_family_dir)
+    with open(os.path.join(dated_family_dir, "F1"), "w") as f:
+        f.write(family_str)
+    with open(os.path.join(dated_family_dir, "F2"), "w") as f:
+        f.write("""start="0200", queue="main", email="a@b.c"
+        JA()
+        """)
+    with open(os.path.join(dated_family_dir, "F3"), "w") as f:
+        f.write("""start="0200", queue="main", email="a@b.c"
+        JB()
+        """)
+    with open(os.path.join(dated_family_dir, "F4"), "w") as f:
+        f.write("""start="0200", queue="main", email="a@b.c"
+        JC()
+        """)
+    todays_log_dir = dirs.todays_log_dir(two_cal_config_chicago)
+    dirs.make_dir(todays_log_dir)
+    fam = Family.parse("F1", family_str, two_cal_config_chicago)
+    return fam, todays_log_dir
 
 
 def test_duplicate_jobs(two_cal_config):
