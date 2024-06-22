@@ -657,7 +657,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     J6()  J7() J8() J9()
      - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
        F3::JB() F4::JC() 
-     J10()
+     J99()
     """
 
     MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
@@ -715,7 +715,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert fam.forests[2].jobs[0][0].job_name == 'JB'
     assert fam.forests[2].jobs[0][1].family_name == 'F4'
     assert fam.forests[2].jobs[0][1].job_name == 'JC'
-    assert fam.forests[2].jobs[1][0].job_name == 'J10'
+    assert fam.forests[2].jobs[1][0].job_name == 'J99'
     assert len(fam.jobs_by_name['J1'].dependencies) == 3
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J1'].dependencies)
     assert (TimeDependency(two_cal_config_chicago, 3, 30, 'America/Chicago') in fam.jobs_by_name['J1'].dependencies)
@@ -742,26 +742,38 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J8'].dependencies)
     assert len(fam.jobs_by_name['J9'].dependencies) == 1
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J9'].dependencies)
-    assert len(fam.jobs_by_name['J10'].dependencies) == 3
-    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J10'].dependencies)
-    assert (ExternalDependency('F3', 'JB') in fam.jobs_by_name['J10'].dependencies)
-    assert (ExternalDependency('F4', 'JC') in fam.jobs_by_name['J10'].dependencies)
+    assert len(fam.jobs_by_name['J99'].dependencies) == 3
+    assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J99'].dependencies)
+    assert (ExternalDependency('F3', 'JB') in fam.jobs_by_name['J99'].dependencies)
+    assert (ExternalDependency('F4', 'JC') in fam.jobs_by_name['J99'].dependencies)
 
     status_json = status(two_cal_config_chicago)
     assert len(status_json['status']['flat_list']) == 13
     assert status_json['status']['flat_list'][0]['job_name'] == 'J1'
     assert status_json['status']['flat_list'][0]['family_name'] == 'F1'
-    assert status_json['status']['flat_list'][1]['job_name'] == 'J10'
-    assert status_json['status']['flat_list'][2]['job_name'] == 'J2'
-    assert status_json['status']['flat_list'][3]['job_name'] == 'J3'
-    assert status_json['status']['flat_list'][4]['job_name'] == 'J4'
-    assert status_json['status']['flat_list'][5]['job_name'] == 'J5'
-    assert status_json['status']['flat_list'][6]['job_name'] == 'J6'
-    assert status_json['status']['flat_list'][7]['job_name'] == 'J7'
-    assert status_json['status']['flat_list'][8]['job_name'] == 'J8'
-    assert status_json['status']['flat_list'][9]['job_name'] == 'J9'
-    
+    assert status_json['status']['flat_list'][1]['job_name'] == 'J2'
+    assert status_json['status']['flat_list'][2]['job_name'] == 'J3'
+    assert status_json['status']['flat_list'][3]['job_name'] == 'J4'
+    assert status_json['status']['flat_list'][4]['job_name'] == 'J5'
+    assert status_json['status']['flat_list'][5]['job_name'] == 'J6'
+    assert status_json['status']['flat_list'][6]['job_name'] == 'J7'
+    assert status_json['status']['flat_list'][7]['job_name'] == 'J8'
+    assert status_json['status']['flat_list'][8]['job_name'] == 'J9'
+    assert status_json['status']['flat_list'][9]['job_name'] == 'J99'
 
+    assert status_json['status']['flat_list'][0]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][1]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][9]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][10]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][11]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][12]['status'] == 'Ready'
 
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 4
@@ -779,7 +791,6 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert ('JA' in all_families[1].names_of_all_ready_jobs())
     assert ('JB' in all_families[2].names_of_all_ready_jobs())
     assert ('JC' in all_families[3].names_of_all_ready_jobs())
-
 
     # show that ext dep is not enough if a time dep exists
     with open(os.path.join(todays_log_dir, "F2.JA.q1.w1.20240601010203.info"), "w") as f:
@@ -833,7 +844,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J7" in ready_jobs
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
-    assert "J10" in ready_jobs
+    assert "J99" in ready_jobs
 
     status_json = status(two_cal_config_chicago)
     assert len(status_json['status']['flat_list']) == 13
@@ -852,7 +863,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J7" in ready_jobs
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
-    assert "J10" in ready_jobs
+    assert "J99" in ready_jobs
 
     MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
     ready_jobs = fam.names_of_all_ready_jobs()
@@ -863,7 +874,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J7" in ready_jobs
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
-    assert "J10" in ready_jobs
+    assert "J99" in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J1.q1.w1.20240601010203.info"), "w") as f:
         f.write('family_name = "F1"\n')
@@ -890,7 +901,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J7" in ready_jobs
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
-    assert "J10" in ready_jobs
+    assert "J99" in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J3.q1.w1.20240601010203.info"), "w") as f:
         f.write('family_name = "F1"\n')
@@ -909,7 +920,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J7" in ready_jobs
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
-    assert "J10" in ready_jobs
+    assert "J99" in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J4.q1.w1.20240601010203.info"), "w") as f:
         f.write('family_name = "F1"\n')
@@ -989,9 +1000,9 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert len(ready_jobs) == 1
     assert 'J9' not in ready_jobs
 
-    with open(os.path.join(todays_log_dir, "name.J10.q1.w1.20240601010203.info"), "w") as f:
+    with open(os.path.join(todays_log_dir, "name.J99.q1.w1.20240601010203.info"), "w") as f:
         f.write('family_name = "F1"\n')
-        f.write('job_name = "J10"\n')
+        f.write('job_name = "J99"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
         f.write('worker_name = "w1"\n')
@@ -1016,7 +1027,7 @@ def test_duplicate_jobs(two_cal_config):
     J6()  J7() J8() J9() J2()
      - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
        F3::JB() F4::JC() 
-     J10()
+     J99()
     """
     with pytest.raises(ex.PyTaskforestParseException) as excinfo:
         _ = Family.parse("name", family_str, two_cal_config)
