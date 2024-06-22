@@ -35,7 +35,7 @@ def status(config: Config, dt: datetime.datetime=None):
 def _get_status(families, log_dir, result):
     logged_jobs_list, logged_jobs_dict = get_logged_job_results(log_dir)
 
-    for family in sorted(families, key=lambda x: x.name):
+    for family in families:
         _get_family_status(family, logged_jobs_dict, result)
 
 
@@ -49,7 +49,7 @@ def _get_family_status(family, logged_jobs_dict, result):
 
 def _get_job_status(family_name, job_name, logged_jobs_dict, job_queue, result):
     if logged_jobs_dict.get(family_name) and logged_jobs_dict[family_name].get(job_name):
-        job_result_dict =  asdict(logged_jobs_dict[family_name].get(job_name), value_serializer=serializer)
+        job_result_dict = asdict(logged_jobs_dict[family_name].get(job_name), value_serializer=serializer)
     else:
         the_job_result = JobResult(family_name, job_name, JobStatus.WAITING, job_queue)
         # noinspection PyTypeChecker

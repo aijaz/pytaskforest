@@ -7,7 +7,7 @@ import pytf.dirs as dirs
 import pytf.exceptions as ex
 from pytf.dependency import (JobDependency, TimeDependency)
 from pytf.forest import Forest
-from pytf.family import Family
+from pytf.family import Family, get_families_from_dir
 from pytf.days import Days
 from pytf.external_dependency import ExternalDependency
 from pytf.calendar import Calendar
@@ -659,16 +659,29 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
        F3::JB() F4::JC() 
      J10()
     """
+
     MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
     two_cal_config_chicago.log_dir = os.path.join(tmp_path, 'log_dir')
     two_cal_config_chicago.family_dir = os.path.join(tmp_path, 'family_dir')
     dated_family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now(tz="America/Chicago"))
     dirs.make_dir(dated_family_dir)
-    with open(os.path.join(dated_family_dir, "name"), "w") as f:
+    with open(os.path.join(dated_family_dir, "F1"), "w") as f:
         f.write(family_str)
+    with open(os.path.join(dated_family_dir, "F2"), "w") as f:
+        f.write("""start="0200", queue="main", email="a@b.c"
+        JA()
+        """)
+    with open(os.path.join(dated_family_dir, "F3"), "w") as f:
+        f.write("""start="0200", queue="main", email="a@b.c"
+        JB()
+        """)
+    with open(os.path.join(dated_family_dir, "F4"), "w") as f:
+        f.write("""start="0200", queue="main", email="a@b.c"
+        JC()
+        """)
     todays_log_dir = dirs.todays_log_dir(two_cal_config_chicago)
     dirs.make_dir(todays_log_dir)
-    fam = Family.parse("name", family_str, two_cal_config_chicago)
+    fam = Family.parse("F1", family_str, two_cal_config_chicago)
     assert fam.start_time_hr == 2
     assert fam.start_time_min == 14
     assert fam.tz is None
@@ -713,14 +726,14 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert (ExternalDependency('F2', 'JA') in fam.jobs_by_name['J2'].dependencies)
     assert len(fam.jobs_by_name['J3'].dependencies) == 3
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J3'].dependencies)
-    assert (JobDependency(two_cal_config_chicago, 'name', 'J1') in fam.jobs_by_name['J3'].dependencies)
-    assert (JobDependency(two_cal_config_chicago, 'name', 'J2') in fam.jobs_by_name['J3'].dependencies)
+    assert (JobDependency(two_cal_config_chicago, 'F1', 'J1') in fam.jobs_by_name['J3'].dependencies)
+    assert (JobDependency(two_cal_config_chicago, 'F1', 'J2') in fam.jobs_by_name['J3'].dependencies)
     assert len(fam.jobs_by_name['J4'].dependencies) == 2
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J4'].dependencies)
-    assert (JobDependency(two_cal_config_chicago, 'name', 'J3') in fam.jobs_by_name['J4'].dependencies)
+    assert (JobDependency(two_cal_config_chicago, 'F1', 'J3') in fam.jobs_by_name['J4'].dependencies)
     assert len(fam.jobs_by_name['J5'].dependencies) == 2
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J5'].dependencies)
-    assert (JobDependency(two_cal_config_chicago, 'name', 'J3') in fam.jobs_by_name['J5'].dependencies)
+    assert (JobDependency(two_cal_config_chicago, 'F1', 'J3') in fam.jobs_by_name['J5'].dependencies)
     assert len(fam.jobs_by_name['J6'].dependencies) == 1
     assert (TimeDependency(two_cal_config_chicago, 2, 14, 'America/Chicago') in fam.jobs_by_name['J6'].dependencies)
     assert len(fam.jobs_by_name['J7'].dependencies) == 1
@@ -734,7 +747,21 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert (ExternalDependency('F3', 'JB') in fam.jobs_by_name['J10'].dependencies)
     assert (ExternalDependency('F4', 'JC') in fam.jobs_by_name['J10'].dependencies)
 
-    # print(json.dumps(status(two_cal_config_chicago), indent=4))
+    status_json = status(two_cal_config_chicago)
+    assert len(status_json['status']['flat_list']) == 13
+    assert status_json['status']['flat_list'][0]['job_name'] == 'J1'
+    assert status_json['status']['flat_list'][0]['family_name'] == 'F1'
+    assert status_json['status']['flat_list'][1]['job_name'] == 'J10'
+    assert status_json['status']['flat_list'][2]['job_name'] == 'J2'
+    assert status_json['status']['flat_list'][3]['job_name'] == 'J3'
+    assert status_json['status']['flat_list'][4]['job_name'] == 'J4'
+    assert status_json['status']['flat_list'][5]['job_name'] == 'J5'
+    assert status_json['status']['flat_list'][6]['job_name'] == 'J6'
+    assert status_json['status']['flat_list'][7]['job_name'] == 'J7'
+    assert status_json['status']['flat_list'][8]['job_name'] == 'J8'
+    assert status_json['status']['flat_list'][9]['job_name'] == 'J9'
+    
+
 
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 4
@@ -742,6 +769,17 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J7" in ready_jobs
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
+
+    family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
+    all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
+    assert (all_families[0].name == 'F1')
+    assert (all_families[1].name == 'F2')
+    assert (all_families[2].name == 'F3')
+    assert (all_families[3].name == 'F4')
+    assert ('JA' in all_families[1].names_of_all_ready_jobs())
+    assert ('JB' in all_families[2].names_of_all_ready_jobs())
+    assert ('JC' in all_families[3].names_of_all_ready_jobs())
+
 
     # show that ext dep is not enough if a time dep exists
     with open(os.path.join(todays_log_dir, "F2.JA.q1.w1.20240601010203.info"), "w") as f:
@@ -752,6 +790,16 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
         f.write('worker_name = "w1"\n')
         f.write('start_time = "2024/06/01 02:02:03"\n')
         f.write('error_code = 0\n')
+
+    status_json = status(two_cal_config_chicago)
+    assert len(status_json['status']['flat_list']) == 13
+
+    family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
+    all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
+    assert (not all_families[1].names_of_all_ready_jobs())
+    assert ('JB' in all_families[2].names_of_all_ready_jobs())
+    assert ('JC' in all_families[3].names_of_all_ready_jobs())
+
 
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 4
@@ -787,6 +835,15 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J9" in ready_jobs
     assert "J10" in ready_jobs
 
+    status_json = status(two_cal_config_chicago)
+    assert len(status_json['status']['flat_list']) == 13
+
+    family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
+    all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
+    assert (not all_families[1].names_of_all_ready_jobs())
+    assert (not all_families[2].names_of_all_ready_jobs())
+    assert (not all_families[3].names_of_all_ready_jobs())
+
     MockDateTime.set_mock(2024, 2, 14, 3, 30, 0, 'America/Chicago')
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 6
@@ -796,7 +853,6 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
     assert "J10" in ready_jobs
-
 
     MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
     ready_jobs = fam.names_of_all_ready_jobs()
@@ -810,7 +866,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J10" in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J1.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J1"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -819,7 +875,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
         f.write('error_code = 0\n')
 
     with open(os.path.join(todays_log_dir, "name.J2.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J2"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -837,7 +893,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J10" in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J3.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J3"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -856,7 +912,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J10" in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J4.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J4"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -869,7 +925,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert 'J4' not in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J5.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J5"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -882,7 +938,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert 'J5' not in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J6.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J6"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -895,7 +951,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert 'J6' not in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J7.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J7"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -908,7 +964,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert 'J7' not in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J8.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J8"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -921,7 +977,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert 'J8' not in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J9.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J9"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')
@@ -934,7 +990,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert 'J9' not in ready_jobs
 
     with open(os.path.join(todays_log_dir, "name.J10.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "name"\n')
+        f.write('family_name = "F1"\n')
         f.write('job_name = "J10"\n')
         f.write('tz = "America/Chicago"\n')
         f.write('queue_name = "q1"\n')

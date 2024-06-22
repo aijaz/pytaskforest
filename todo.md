@@ -1,8 +1,9 @@
 # TODO
 
-- [ ] Basic Loop with Queues
-  - [ ] Dependencies
-- [ ] Status
+- [x] Basic Loop
+  - [x] Dependencies
+  - [ ] Queues
+- [x] Status
 - [ ] Script support
 - [ ] Docker
 - [ ] Flask
