@@ -55,7 +55,11 @@ class JobDependency(Dependency):
         # Get job, find out from status if job has run today - need to get status
         logged_jobs_dict = user_info
         if family_dict := logged_jobs_dict.get(self.family_name):
-            return family_dict.get(self.job_name) is not None
+            if family_dict.get(self.job_name) is None:
+                return False
+            if family_dict[self.job_name].error_code is None:
+                return False
+            return family_dict[self.job_name].error_code == 0
         return False
 
     def __str__(self):

@@ -1,4 +1,3 @@
-import json
 import os
 
 import pytest
@@ -804,13 +803,26 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
 
     status_json = status(two_cal_config_chicago)
     assert len(status_json['status']['flat_list']) == 13
+    assert status_json['status']['flat_list'][0]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][1]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][9]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][10]['status'] == 'Success'
+    assert status_json['status']['flat_list'][11]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][12]['status'] == 'Ready'
+
 
     family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
     all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
     assert (not all_families[1].names_of_all_ready_jobs())
     assert ('JB' in all_families[2].names_of_all_ready_jobs())
     assert ('JC' in all_families[3].names_of_all_ready_jobs())
-
 
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 4
@@ -848,6 +860,19 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
 
     status_json = status(two_cal_config_chicago)
     assert len(status_json['status']['flat_list']) == 13
+    assert status_json['status']['flat_list'][0]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][1]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][9]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][10]['status'] == 'Success'
+    assert status_json['status']['flat_list'][11]['status'] == 'Success'
+    assert status_json['status']['flat_list'][12]['status'] == 'Success'
 
     family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
     all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
@@ -864,6 +889,21 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
     assert "J99" in ready_jobs
+    status_json = status(two_cal_config_chicago)
+    assert len(status_json['status']['flat_list']) == 13
+    assert status_json['status']['flat_list'][0]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][1]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][9]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][10]['status'] == 'Success'
+    assert status_json['status']['flat_list'][11]['status'] == 'Success'
+    assert status_json['status']['flat_list'][12]['status'] == 'Success'
 
     MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
     ready_jobs = fam.names_of_all_ready_jobs()
@@ -875,6 +915,21 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
     assert "J99" in ready_jobs
+    status_json = status(two_cal_config_chicago)
+    assert len(status_json['status']['flat_list']) == 13
+    assert status_json['status']['flat_list'][0]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][1]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][9]['status'] == 'Ready'
+    assert status_json['status']['flat_list'][10]['status'] == 'Success'
+    assert status_json['status']['flat_list'][11]['status'] == 'Success'
+    assert status_json['status']['flat_list'][12]['status'] == 'Success'
 
     with open(os.path.join(todays_log_dir, "name.J1.q1.w1.20240601010203.info"), "w") as f:
         f.write('family_name = "F1"\n')
@@ -902,6 +957,7 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     assert "J8" in ready_jobs
     assert "J9" in ready_jobs
     assert "J99" in ready_jobs
+
 
     with open(os.path.join(todays_log_dir, "name.J3.q1.w1.20240601010203.info"), "w") as f:
         f.write('family_name = "F1"\n')
@@ -999,6 +1055,36 @@ def test_external_deps_fallback_tz(two_cal_config_chicago, tmp_path):
     ready_jobs = fam.names_of_all_ready_jobs()
     assert len(ready_jobs) == 1
     assert 'J9' not in ready_jobs
+
+    # mark F4::JC as failed
+    with open(os.path.join(todays_log_dir, "F4.JC.q1.w1.20240601010203.info"), "w") as f:
+        f.write('family_name = "F4"\n')
+        f.write('job_name = "JC"\n')
+        f.write('tz = "America/Chicago"\n')
+        f.write('queue_name = "q1"\n')
+        f.write('worker_name = "w1"\n')
+        f.write('start_time = "2024/06/01 02:02:03"\n')
+        f.write('error_code = 127\n')
+
+    ready_jobs = fam.names_of_all_ready_jobs()
+    assert len(ready_jobs) == 0
+    assert "J99" not in ready_jobs
+
+    status_json = status(two_cal_config_chicago)
+    assert len(status_json['status']['flat_list']) == 13
+    assert status_json['status']['flat_list'][0]['status'] == 'Success'
+    assert status_json['status']['flat_list'][1]['status'] == 'Success'
+    assert status_json['status']['flat_list'][2]['status'] == 'Success'
+    assert status_json['status']['flat_list'][3]['status'] == 'Success'
+    assert status_json['status']['flat_list'][4]['status'] == 'Success'
+    assert status_json['status']['flat_list'][5]['status'] == 'Success'
+    assert status_json['status']['flat_list'][6]['status'] == 'Success'
+    assert status_json['status']['flat_list'][7]['status'] == 'Success'
+    assert status_json['status']['flat_list'][8]['status'] == 'Success'
+    assert status_json['status']['flat_list'][9]['status'] == 'Waiting'
+    assert status_json['status']['flat_list'][10]['status'] == 'Success'
+    assert status_json['status']['flat_list'][11]['status'] == 'Success'
+    assert status_json['status']['flat_list'][12]['status'] == 'Failure'
 
     with open(os.path.join(todays_log_dir, "name.J99.q1.w1.20240601010203.info"), "w") as f:
         f.write('family_name = "F1"\n')
