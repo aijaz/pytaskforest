@@ -34,22 +34,22 @@ def run_shell_script(script_path, run_logger):
             run_logger.info(line)
         if line := process.stderr.readline().decode('utf-8').strip():
             run_logger.error(line)
-        if (err := process.poll()) is not None:
+        if (err_code := process.poll()) is not None:
             # clean up any remaining lines from the buffers
             while line := process.stdout.readline().decode('utf-8').strip():
                 run_logger.info(line)
             while line := process.stderr.readline().decode('utf-8').strip():
                 run_logger.error(line)
-            if err:
-                run_logger.error(f"Process failed with error code {err}")
+            if err_code:
+                run_logger.error(f"Process failed with error code {err_code}")
             else:
-                run_logger.info(f"Process completed with return code {err}")
+                run_logger.info(f"Process completed with return code {err_code}")
             break
         time.sleep(0.1)
 
     process.stdout.close()
     process.stderr.close()
-    return process.wait()
+    return err_code
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ import pytz
 
 from .config import Config
 from .mockdatetime import MockDateTime, MockSleep
-from .runner import prepare_required_dirs
+from .runner import prepare_required_dirs, run_shell_script
 from .status import status_and_families
 
 
@@ -40,4 +40,7 @@ def main_function(config: Config):
     status, families = status_and_families(config)
     ready_jobs = [j for j in status['status']['flat_list'] if j['status'] == 'Ready']
     for job in ready_jobs:
-        print(f"Gonna run job {job['family_name']}::{job['job_name']}")
+        if config.run_local:
+            print(f"Gonna run job {job['family_name']}::{job['job_name']} locally")
+        else:
+            print(f"Gonna run job {job['family_name']}::{job['job_name']} remotely")

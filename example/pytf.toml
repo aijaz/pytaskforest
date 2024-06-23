@@ -2,6 +2,7 @@ log_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/log"
 job_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/job"
 family_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/family"
 instructions_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/instruction"
+run_local = true
 
 calendars.daily = [
   "*/*/*"
