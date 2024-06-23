@@ -58,13 +58,13 @@ class PytfJSONFormatter(logging.Formatter):
             always_fields["stack_info"] = self.formatStack(record.stack_info)
 
         message = {
-            key: msg_val
-            if (msg_val := always_fields.pop(val, None)) is not None
-            else getattr(record, val)
+            key: (
+                msg_val
+                if (msg_val := always_fields.pop(val, None)) is not None
+                else getattr(record, val)
+            )
             for key, val in self.fmt_keys.items()
-        }
-        message.update(always_fields)
-
+        } | always_fields
         for key, val in record.__dict__.items():
             if key not in LOG_RECORD_BUILTIN_ATTRS:
                 message[key] = val
