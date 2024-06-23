@@ -1,0 +1,12 @@
+log_dir = "./log"
+job_dir = "./job"
+family_dir = "./family"
+instructions_dir = "./instruction"
+
+calendars.daily = [
+  "*/*/*"
+]
+calendars.mondays = [
+  "every Monday */*"
+]
+primary_tz = "America/Chicago"

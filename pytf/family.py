@@ -28,9 +28,9 @@ class Family:
     The user should change it so that the job names are unique.
     """
     name: str = field()
-    start_time_hr: int = field()
-    start_time_min: int = field()
     tz: str = field()
+    start_time_hr: int = field(default=0)
+    start_time_min: int = field(default=0)
     calendar_or_days: Calendar | Days | None = field(default=None)
     queue: str | None = field(default=None)
     email: str | None = field(default=None)
