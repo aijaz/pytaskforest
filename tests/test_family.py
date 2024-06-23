@@ -691,7 +691,9 @@ def test_external_deps_fallback_tz_status_1(two_cal_config_chicago, tmp_path):
 
     status_json = status(two_cal_config_chicago)
     assert [j['status'] for j in status_json['status']['flat_list']] == [
-        'Waiting','Waiting','Waiting','Waiting','Waiting','Ready','Ready','Ready','Ready','Waiting','Ready','Ready','Ready',
+        'Waiting','Waiting','Waiting','Waiting','Waiting',
+        'Ready','Ready','Ready','Ready','Waiting',
+        'Ready','Ready','Ready',
     ]
 
 
@@ -706,333 +708,307 @@ def test_external_deps_fallback_tz_status_names_of_ready_jobs_all_families(two_c
 
     family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
     all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
-    assert (all_families[0].name == 'F1')
-    assert (all_families[1].name == 'F2')
-    assert (all_families[2].name == 'F3')
-    assert (all_families[3].name == 'F4')
-    assert ('JA' in all_families[1].names_of_all_ready_jobs())
-    assert ('JB' in all_families[2].names_of_all_ready_jobs())
-    assert ('JC' in all_families[3].names_of_all_ready_jobs())
+    assert [f.name for f in all_families] == ['F1', 'F2', 'F3', 'F4']
 
 
-
-def test_external_deps_fallback_tz_status_names_of_ready_jobs_all_families(two_cal_config_chicago, tmp_path):
+def test_external_deps_fallback_tz_status_names_of_ready_jobs_external_deps(two_cal_config_chicago, tmp_path):
     fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
 
     family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
     all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
-    assert (all_families[0].name == 'F1')
-    assert (all_families[1].name == 'F2')
-    assert (all_families[2].name == 'F3')
-    assert (all_families[3].name == 'F4')
     assert ('JA' in all_families[1].names_of_all_ready_jobs())
     assert ('JB' in all_families[2].names_of_all_ready_jobs())
     assert ('JC' in all_families[3].names_of_all_ready_jobs())
 
-    # show that ext dep is not enough if a time dep exists
-    with open(os.path.join(todays_log_dir, "F2.JA.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F2"\n')
-        f.write('job_name = "JA"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
 
+def test_external_deps_not_enough_if_time_dep_exists(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
     status_json = status(two_cal_config_chicago)
-    assert len(status_json['status']['flat_list']) == 13
-    assert status_json['status']['flat_list'][0]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][1]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][9]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][10]['status'] == 'Success'
-    assert status_json['status']['flat_list'][11]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][12]['status'] == 'Ready'
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting','Waiting','Waiting','Waiting','Waiting',
+        'Ready','Ready','Ready','Ready','Waiting',
+        'Success','Ready','Ready',
+    ]
+
+
+def create_job_done_file(d, fn, jn, tz, q, w, st, ec):
+    with open(os.path.join(d, f"{fn}.{jn}.{q}.{w}.{st}.info"), "w") as f:
+        f.write(f'family_name = "{fn}"\n')
+        f.write(f'job_name = "{jn}"\n')
+        f.write(f'tz = "{tz}"\n')
+        f.write(f'queue_name = "{q}"\n')
+        f.write(f'worker_name = "{w}"\n')
+        f.write('start_time = "{st}"\n')
+        f.write(f'error_code = {ec}\n')
+
+
+def test_all_ready_jobs_modified_as_jobs_complete(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
 
     family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
     all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
-    assert (not all_families[1].names_of_all_ready_jobs())
-    assert ('JB' in all_families[2].names_of_all_ready_jobs())
-    assert ('JC' in all_families[3].names_of_all_ready_jobs())
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 4
-    assert "J6" in ready_jobs
-    assert "J7" in ready_jobs
-    assert "J8" in ready_jobs
-    assert "J9" in ready_jobs
+    assert all_families[0].names_of_all_ready_jobs() == ['J6', 'J7', 'J8', 'J9']
+    assert not all_families[1].names_of_all_ready_jobs()
+    assert all_families[2].names_of_all_ready_jobs() == ['JB']
+    assert all_families[3].names_of_all_ready_jobs() == ['JC']
 
-    # 2 other ext deps
-    with open(os.path.join(todays_log_dir, "F3.JB.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F3"\n')
-        f.write('job_name = "JB"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
 
-    with open(os.path.join(todays_log_dir, "F4.JC.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F4"\n')
-        f.write('job_name = "JC"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
-
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 5
-    assert "J6" in ready_jobs
-    assert "J7" in ready_jobs
-    assert "J8" in ready_jobs
-    assert "J9" in ready_jobs
-    assert "J99" in ready_jobs
-
-    status_json = status(two_cal_config_chicago)
-    assert len(status_json['status']['flat_list']) == 13
-    assert status_json['status']['flat_list'][0]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][1]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][9]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][10]['status'] == 'Success'
-    assert status_json['status']['flat_list'][11]['status'] == 'Success'
-    assert status_json['status']['flat_list'][12]['status'] == 'Success'
+def test_two_more_ext_deps_ready_jobs(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
 
     family_dir = dirs.dated_subdir(two_cal_config_chicago.family_dir, MockDateTime.now('America/Chicago'))
     all_families = get_families_from_dir(family_dir, two_cal_config_chicago)
-    assert (not all_families[1].names_of_all_ready_jobs())
-    assert (not all_families[2].names_of_all_ready_jobs())
-    assert (not all_families[3].names_of_all_ready_jobs())
 
+    assert all_families[0].names_of_all_ready_jobs() == ['J6', 'J7', 'J8', 'J9', 'J99']
+    assert not all_families[1].names_of_all_ready_jobs()
+    assert not all_families[1].names_of_all_ready_jobs()
+    assert not all_families[1].names_of_all_ready_jobs()
+
+
+def test_two_more_ext_deps_status(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting','Waiting','Waiting','Waiting','Waiting',
+        'Ready','Ready','Ready','Ready','Ready',
+        'Success','Success','Success',
+    ]
+
+
+def test_3_30_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
     MockDateTime.set_mock(2024, 2, 14, 3, 30, 0, 'America/Chicago')
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 6
-    assert "J1" in ready_jobs
-    assert "J6" in ready_jobs
-    assert "J7" in ready_jobs
-    assert "J8" in ready_jobs
-    assert "J9" in ready_jobs
-    assert "J99" in ready_jobs
-    status_json = status(two_cal_config_chicago)
-    assert len(status_json['status']['flat_list']) == 13
-    assert status_json['status']['flat_list'][0]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][1]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][9]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][10]['status'] == 'Success'
-    assert status_json['status']['flat_list'][11]['status'] == 'Success'
-    assert status_json['status']['flat_list'][12]['status'] == 'Success'
+    assert fam.names_of_all_ready_jobs() == ['J1', 'J6', 'J7', 'J8', 'J9', 'J99']
 
+
+def test_3_30_status(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 3, 30, 0, 'America/Chicago')
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Ready','Waiting','Waiting','Waiting','Waiting',
+        'Ready','Ready','Ready','Ready','Ready',
+        'Success','Success','Success',
+    ]
+
+
+def test_3_31_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
     MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 7
-    assert "J1" in ready_jobs
-    assert "J2" in ready_jobs
-    assert "J6" in ready_jobs
-    assert "J7" in ready_jobs
-    assert "J8" in ready_jobs
-    assert "J9" in ready_jobs
-    assert "J99" in ready_jobs
+    assert fam.names_of_all_ready_jobs() == ['J1', 'J2', 'J6', 'J7', 'J8', 'J9', 'J99']
+
+
+def test_3_31_status(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
     status_json = status(two_cal_config_chicago)
-    assert len(status_json['status']['flat_list']) == 13
-    assert status_json['status']['flat_list'][0]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][1]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][2]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][3]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][4]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][5]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][6]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][7]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][8]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][9]['status'] == 'Ready'
-    assert status_json['status']['flat_list'][10]['status'] == 'Success'
-    assert status_json['status']['flat_list'][11]['status'] == 'Success'
-    assert status_json['status']['flat_list'][12]['status'] == 'Success'
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Ready','Ready','Waiting','Waiting','Waiting',
+        'Ready','Ready','Ready','Ready','Ready',
+        'Success','Success','Success',
+    ]
 
-    with open(os.path.join(todays_log_dir, "name.J1.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J1"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
 
-    with open(os.path.join(todays_log_dir, "name.J2.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J2"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
+def test_post_j1_j2_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert fam.names_of_all_ready_jobs() == ['J3', 'J6', 'J7', 'J8', 'J9', 'J99']
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 6
-    assert "J3" in ready_jobs
-    assert "J6" in ready_jobs
-    assert "J7" in ready_jobs
-    assert "J8" in ready_jobs
-    assert "J9" in ready_jobs
-    assert "J99" in ready_jobs
 
-    with open(os.path.join(todays_log_dir, "name.J3.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J3"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
+def test_post_j3_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert fam.names_of_all_ready_jobs() == ['J4', 'J5', 'J6', 'J7', 'J8', 'J9', 'J99']
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 7
-    assert "J4" in ready_jobs
-    assert "J5" in ready_jobs
-    assert "J6" in ready_jobs
-    assert "J7" in ready_jobs
-    assert "J8" in ready_jobs
-    assert "J9" in ready_jobs
-    assert "J99" in ready_jobs
 
-    with open(os.path.join(todays_log_dir, "name.J4.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J4"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
+def test_post_j4_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert fam.names_of_all_ready_jobs() == ['J5', 'J6', 'J7', 'J8', 'J9', 'J99']
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 6
-    assert 'J4' not in ready_jobs
 
-    with open(os.path.join(todays_log_dir, "name.J5.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J5"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
+def test_post_j5_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J5', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert fam.names_of_all_ready_jobs() == ['J6', 'J7', 'J8', 'J9', 'J99']
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 5
-    assert 'J5' not in ready_jobs
 
-    with open(os.path.join(todays_log_dir, "name.J6.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J6"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
+def test_post_j6_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J5', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J6', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert fam.names_of_all_ready_jobs() == ['J7', 'J8', 'J9', 'J99']
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 4
-    assert 'J6' not in ready_jobs
 
-    with open(os.path.join(todays_log_dir, "name.J7.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J7"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
+def test_post_j7_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J5', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J6', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J7', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert fam.names_of_all_ready_jobs() == ['J8', 'J9', 'J99']
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 3
-    assert 'J7' not in ready_jobs
 
-    with open(os.path.join(todays_log_dir, "name.J8.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J8"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
+def test_post_j8_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J5', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J6', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J7', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J8', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert fam.names_of_all_ready_jobs() == ['J9', 'J99']
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 2
-    assert 'J8' not in ready_jobs
 
-    with open(os.path.join(todays_log_dir, "name.J9.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J9"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
+def test_post_j9_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J5', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J6', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J7', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J8', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J9', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert fam.names_of_all_ready_jobs() == ['J99']
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 1
-    assert 'J9' not in ready_jobs
 
-    # mark F4::JC as failed
-    with open(os.path.join(todays_log_dir, "F4.JC.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F4"\n')
-        f.write('job_name = "JC"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 127\n')
+def test_mark_jc_failed_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J5', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J6', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J7', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J8', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J9', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',127)
+    assert not fam.names_of_all_ready_jobs()
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 0
-    assert "J99" not in ready_jobs
 
+def test_mark_jc_failed_status(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J5', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J6', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J7', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J8', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J9', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',127)
     status_json = status(two_cal_config_chicago)
-    assert len(status_json['status']['flat_list']) == 13
-    assert status_json['status']['flat_list'][0]['status'] == 'Success'
-    assert status_json['status']['flat_list'][1]['status'] == 'Success'
-    assert status_json['status']['flat_list'][2]['status'] == 'Success'
-    assert status_json['status']['flat_list'][3]['status'] == 'Success'
-    assert status_json['status']['flat_list'][4]['status'] == 'Success'
-    assert status_json['status']['flat_list'][5]['status'] == 'Success'
-    assert status_json['status']['flat_list'][6]['status'] == 'Success'
-    assert status_json['status']['flat_list'][7]['status'] == 'Success'
-    assert status_json['status']['flat_list'][8]['status'] == 'Success'
-    assert status_json['status']['flat_list'][9]['status'] == 'Waiting'
-    assert status_json['status']['flat_list'][10]['status'] == 'Success'
-    assert status_json['status']['flat_list'][11]['status'] == 'Success'
-    assert status_json['status']['flat_list'][12]['status'] == 'Failure'
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Success','Success','Success','Success','Success',
+        'Success','Success','Success','Success','Waiting',
+        'Success','Success','Failure',
+    ]
 
-    with open(os.path.join(todays_log_dir, "name.J99.q1.w1.20240601010203.info"), "w") as f:
-        f.write('family_name = "F1"\n')
-        f.write('job_name = "J99"\n')
-        f.write('tz = "America/Chicago"\n')
-        f.write('queue_name = "q1"\n')
-        f.write('worker_name = "w1"\n')
-        f.write('start_time = "2024/06/01 02:02:03"\n')
-        f.write('error_code = 0\n')
 
-    ready_jobs = fam.names_of_all_ready_jobs()
-    assert len(ready_jobs) == 0
+def test_j99_success_ready(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    MockDateTime.set_mock(2024, 2, 14, 4, 31, 0, 'America/Denver')
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J3', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J4', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J5', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J6', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J7', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J8', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F1', 'J9', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203',127)
+    create_job_done_file(todays_log_dir, 'F1', 'J99', 'America/Chicago', 'q', 'w', '20240601010203',0)
+    assert not fam.names_of_all_ready_jobs()
 
 
 def prep_status_family(tmp_path, two_cal_config_chicago):
