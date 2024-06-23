@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 import pytz
 
@@ -20,6 +21,7 @@ def main(config: Config):
 
 
 def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run):
+    logger = logging.getLogger('pytf_logger')
     sleep_time = 10
     while True:
         # primary_tz is used for the start and end time of the main loop
@@ -30,17 +32,16 @@ def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run)
         function_to_run(config)  # Assume this takes less than a minute to run
         now: datetime.datetime = MockDateTime.now(tz=config.primary_tz)
         sleep_time_left = sleep_time - (now.second % sleep_time)
-        print(f"Sleeping for {sleep_time_left}")
+        logger.debug(f"Sleeping for {sleep_time_left}")
         MockSleep.sleep(sleep_time_left)
-
-    # TODO: Log here
 
 
 def main_function(config: Config):
+    logger = logging.getLogger('pytf_logger')
     status, families = status_and_families(config)
     ready_jobs = [j for j in status['status']['flat_list'] if j['status'] == 'Ready']
     for job in ready_jobs:
         if config.run_local:
-            print(f"Gonna run job {job['family_name']}::{job['job_name']} locally")
+            logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} locally")
         else:
-            print(f"Gonna run job {job['family_name']}::{job['job_name']} remotely")
+            logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} remotely")

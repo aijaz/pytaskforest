@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import json
+import logging.config
+import logging
 
 import click
 
@@ -15,9 +17,11 @@ from pytf.main import main as pytf_main
 from pytf.rerun import rerun as pytf_rerun
 from pytf.mark import mark as pytf_mark
 from pytf.hold import hold as pytf_hold
+from pytf.pytf_logging import get_logging_config
 from pytf.status import status as pytf_status
 from pytf.release_hold import release_hold as pytf_release_hold
 
+logger = logging.getLogger('pytf_logger')
 
 @click.group()
 @click.option('--log_dir', help='Log Directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
@@ -54,6 +58,7 @@ def pytf(context,
         raise PyTaskforestParseException(MSG_CONFIG_MISSING_JOB_DIR)
     if config.instructions_dir is None:
         raise PyTaskforestParseException(MSG_CONFIG_MISSING_INSTRUCTIONS_DIR)
+    setup_logging(config.log_dir)
 
 
 @pytf.command()
@@ -106,6 +111,10 @@ def hold(context, family, job):
 def release_hold(context, family, job):
     config = context.obj['config']
     pytf_release_hold(config, family, job)
+
+
+def setup_logging(log_dir: str):
+    logging.config.dictConfig(get_logging_config(log_dir))
 
 
 if __name__ == '__main__':
