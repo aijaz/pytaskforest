@@ -8,11 +8,12 @@ def get_logging_config(log_dir: str):
         "disable_existing_loggers": False,
         "formatters": {
             "simple": {
-                "format": "%(asctime)s %(module)s %(levelname)s %(message)s"
+                "format": "%(asctime)s %(module)s %(levelname)s %(message)s",
+                "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             },
             "detailed": {
                 "format": "%(asctime)s %(module)s:%(linenum)d %(levelname)s %(message)s",
-                "datefme": "%Y-%m-%dT%H:%M:%S%z",
+                "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             },
             "json": {
                 "()": "pytf.pytf_json_formatter.PytfJSONFormatter",
@@ -57,4 +58,5 @@ def get_logging_config(log_dir: str):
             }
         }
     }
+
 

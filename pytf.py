@@ -115,6 +115,8 @@ def release_hold(context, family, job):
 
 def setup_logging(log_dir: str):
     logging.config.dictConfig(get_logging_config(log_dir))
+    runner_config = logging.getLogger('runner')
+
 
 
 if __name__ == '__main__':

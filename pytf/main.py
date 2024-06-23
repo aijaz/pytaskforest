@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 
 import pytz
 
@@ -40,8 +41,20 @@ def main_function(config: Config):
     logger = logging.getLogger('pytf_logger')
     status, families = status_and_families(config)
     ready_jobs = [j for j in status['status']['flat_list'] if j['status'] == 'Ready']
+
     for job in ready_jobs:
+        job_log_file = os.path.join(config.todays_log_dir, f"{job['family_name']}.{job['job_name']}.log")
+        run_logger = logging.getLogger('run_logger')
+        run_logger.setLevel(logging.INFO)
+        handler = logging.FileHandler(filename=job_log_file)
+        handler.setFormatter(logging.Formatter("%(asctime)s -> %(message)s", datefmt="%Y-%m-%dT%H:%M:%S%z"))
+        handler.setLevel(logging.DEBUG)
+        for old_handler in run_logger.handlers:
+            run_logger.removeHandler(old_handler)
+        run_logger.addHandler(handler)
+
         if config.run_local:
             logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} locally")
+            run_logger.info(f"Run Logger: Gonna run job {job['family_name']}::{job['job_name']} locally")
         else:
             logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} remotely")
