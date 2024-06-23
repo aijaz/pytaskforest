@@ -1,7 +1,5 @@
 import os
 
-from pytf.pytf_json_formatter import pytf_json_formatter
-
 
 def get_logging_config(log_dir: str):
     filename = os.path.join(log_dir, "pytf.log.jsonl")
@@ -17,7 +15,7 @@ def get_logging_config(log_dir: str):
                 "datefme": "%Y-%m-%dT%H:%M:%S%z",
             },
             "json": {
-                "()": "pytf.pytf_json_formatter",
+                "()": "pytf.pytf_json_formatter.PytfJSONFormatter",
                 "fmt_keys": {
                     "level": "levelname",
                     "message": "message",
@@ -31,10 +29,10 @@ def get_logging_config(log_dir: str):
             }
         },
         "handlers": {
-            "stderr": {
+            "console": {
                 "class": "logging.StreamHandler",
                 "formatter": "simple",
-                "level": "WARNING",
+                "level": "DEBUG",
                 "stream": "ext://sys.stdout",
             },
             "file": {
@@ -47,7 +45,7 @@ def get_logging_config(log_dir: str):
             },
             "queue_handler": {
                 "class": "logging.handlers.QueueHandler",
-                "handlers": ["stderr", "file"],
+                "handlers": ["console", "file"],
                 "respect_handler_level": True,
                 "comments": "view https://www.youtube.com/watch?v=9L77QExPmI0 for notes on this"
             }
@@ -55,7 +53,7 @@ def get_logging_config(log_dir: str):
         "loggers": {
             "root": {
                 "level": "DEBUG",
-                "handlers": ["stderr", "file"]
+                "handlers": ["console", "file"]
             }
         }
     }
