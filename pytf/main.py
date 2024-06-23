@@ -52,14 +52,15 @@ def main_function(config: Config):
         for old_handler in run_logger.handlers:
             run_logger.removeHandler(old_handler)
         run_logger.addHandler(handler)
+        run_logger.propagate = False
 
         if config.run_local:
             logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} locally")
             run_logger.info(f"Run Logger: Gonna run job {job['family_name']}::{job['job_name']} locally")
             script_path = os.path.join(config.job_dir, job['job_name'])
-            now = MockDateTime.now(config.primary_tz)
+            now = MockDateTime.now(config.primary_tz    )
             start_small = now.strftime("%Y%m%d%H%M%S")
-            start_pretty = MockDateTime.now(job['tz']).strftime("%Y/%m/%d %H:%M:%S")
+            start_pretty = MockDateTime.now().astimezone(pytz.timezone(job['tz'])).strftime("%Y/%m/%d %H:%M:%S")
 
             info_path = os.path.join(config.todays_log_dir,
                                      f"{job['family_name']}.{job['job_name']}.x.x.{start_small}.info")
