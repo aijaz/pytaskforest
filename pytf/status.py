@@ -1,5 +1,4 @@
 import datetime
-import os.path
 
 from attrs import asdict
 
@@ -10,26 +9,35 @@ from .job_result import JobResult, serializer
 from .job_status import JobStatus
 from .logs import get_logged_job_results
 from .mockdatetime import MockDateTime
+from .runner import prepare_required_dirs
 
 
 def status(config: Config, dt: datetime.datetime = None):
+    status, _ = _status_helper(config, dt)
+    return status
+
+
+def status_and_families(config: Config, dt: datetime.datetime = None):
+    return _status_helper(config, dt)
+
+
+def _status_helper(config: Config, dt: datetime.datetime = None):
     if dt is None:
         dt = MockDateTime.now(config.primary_tz)
 
     result = {"status": {"flat_list": [], "family": {}}}
 
+    prepare_required_dirs(config)
+
     # To see what's run, don't consult families. Things might have changed.
     # Look at the log dir
     log_dir_to_examine = dirs.dated_subdir(config.log_dir, dt)
-    if not os.path.exists(log_dir_to_examine):
-        return result
 
-    family_dir = dirs.dated_subdir(config.family_dir, dt)
-    families = get_families_from_dir(family_dir, config)
+    families = get_families_from_dir(config.todays_family_dir, config)
 
     _get_status(families, log_dir_to_examine, result)
 
-    return result
+    return result, families
 
 
 def _get_status(families, log_dir, result):
