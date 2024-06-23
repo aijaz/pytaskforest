@@ -56,5 +56,22 @@ def main_function(config: Config):
         if config.run_local:
             logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} locally")
             run_logger.info(f"Run Logger: Gonna run job {job['family_name']}::{job['job_name']} locally")
+            script_path = os.path.join(config.job_dir, job['job_name'])
+            now = MockDateTime.now(config.primary_tz)
+            start_small = now.strftime("%Y%m%d%H%M%S")
+            start_pretty = MockDateTime.now(job['tz']).strftime("%Y/%m/%d %H:%M:%S")
+
+            info_path = os.path.join(config.todays_log_dir,
+                                     f"{job['family_name']}.{job['job_name']}.x.x.{start_small}.info")
+            with open(info_path, "w") as f:
+                f.write(f'family_name = "{job['family_name']}"\n')
+                f.write(f'job_name = "{job['job_name']}"\n')
+                f.write(f'queue_name = "{job['queue_name']}"\n')
+                f.write(f'tz = "{job['tz']}"\n')
+                f.write(f'worker_name = "???"\n')
+                f.write(f'start_time = "{start_pretty}"\n')
+            err = run_shell_script(script_path)
+            with open(info_path, "a") as f:
+                f.write(f'error_code = {err}')
         else:
             logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} remotely")

@@ -35,34 +35,39 @@ def _status_helper(config: Config, dt: datetime.datetime = None):
 
     families = get_families_from_dir(config.todays_family_dir, config)
 
-    _get_status(families, log_dir_to_examine, result)
+    _get_status(config, families, log_dir_to_examine, result)
 
     return result, families
 
 
-def _get_status(families, log_dir, result):
+def _get_status(config, families, log_dir, result):
     logged_jobs_list, logged_jobs_dict = get_logged_job_results(log_dir)
 
     for family in families:
-        _get_family_status(family, logged_jobs_dict, result)
+        _get_family_status(config, family, logged_jobs_dict, result)
 
 
-def _get_family_status(family, logged_jobs_dict, result):
+def _get_family_status(config, family, logged_jobs_dict, result):
     result['status']['family'][family.name] = []
 
     for job_name in sorted(family.jobs_by_name.keys()):
         job_queue = family.jobs_by_name[job_name].queue
-        _get_job_status(family, job_name, logged_jobs_dict, job_queue, result)
+        job_tz = family.jobs_by_name[job_name].tz or family.tz or config.primary_tz
+        _get_job_status(family, job_name, logged_jobs_dict, job_queue, job_tz, result)
 
 
-def _get_job_status(family, job_name, logged_jobs_dict, job_queue, result):
+def _get_job_status(family, job_name, logged_jobs_dict, job_queue, job_tz, result):
     family_name = family.name
     if logged_jobs_dict.get(family_name) and logged_jobs_dict[family_name].get(job_name):
         job_result_dict = asdict(logged_jobs_dict[family_name].get(job_name), value_serializer=serializer)
     else:
         unmet = [True for d in family.jobs_by_name[job_name].dependencies if d.met(logged_jobs_dict) is False]
 
-        the_job_result = JobResult(family_name, job_name, JobStatus.WAITING if unmet else JobStatus.READY, job_queue)
+        the_job_result = JobResult(family_name,
+                                   job_name,
+                                   JobStatus.WAITING if unmet else JobStatus.READY,
+                                   job_queue,
+                                   job_tz)
         # noinspection PyTypeChecker
         job_result_dict = asdict(the_job_result, value_serializer=serializer)
 

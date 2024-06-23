@@ -631,7 +631,6 @@ def test_external_deps_tz(two_cal_config):
                                                     }
 
 
-
 def test_external_deps_fallback_tz_dependencies(two_cal_config_chicago, tmp_path):
     family_str = """start="0214", queue="main", email="a@b.c"
 

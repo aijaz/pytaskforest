@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import subprocess
 import time
@@ -24,7 +25,8 @@ def _make_family_dir_if_necessary(config, todays_family_dir):
         dirs.copy_files_from_dir_to_dir(config.family_dir, todays_family_dir)
 
 
-def run_shell_script(script_path: str, run_logger):
+def run_shell_script(script_path: str):
+    run_logger = logging.getLogger('run_logger')
 
     process = subprocess.Popen(
         script_path,
