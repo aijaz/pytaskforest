@@ -7,7 +7,7 @@ import pytz
 from .config import Config
 from .mockdatetime import MockDateTime, MockSleep
 from .runner import prepare_required_dirs, run_shell_script
-from ..pytf_worker import run_task
+from .pytf_worker import run_task
 from .status import status_and_families
 
 
