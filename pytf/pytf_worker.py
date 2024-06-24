@@ -10,8 +10,7 @@ from .mockdatetime import MockDateTime
 from .runner import run_shell_script
 
 
-celery_app = Celery('celery_worker',
-             broker='pyamqp://guest:guest@my_rabbitmq_c//')
+celery_app = Celery('celery_worker', broker="amqp://myuser:mypassword@localhost:5672/myvhost")
 
 
 def run(todays_log_dir: str,

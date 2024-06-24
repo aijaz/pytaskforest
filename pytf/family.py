@@ -10,7 +10,7 @@ from .forest import Forest
 import pytf.exceptions as ex
 from .parse_utils import parse_time, lower_true_false, simple_type
 from .config import Config
-from .calendar import Calendar
+from .pytf_calendar import Calendar
 from .dependency import JobDependency, TimeDependency
 from .days import Days
 from .job import Job

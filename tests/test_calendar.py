@@ -1,6 +1,6 @@
 import pytest
 
-from pytf.calendar import Calendar
+from pytf.pytf_calendar import Calendar
 
 
 cal_params = [

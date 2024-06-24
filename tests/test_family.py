@@ -9,7 +9,7 @@ from pytf.forest import Forest
 from pytf.family import Family, get_families_from_dir
 from pytf.days import Days
 from pytf.external_dependency import ExternalDependency
-from pytf.calendar import Calendar
+from pytf.pytf_calendar import Calendar
 from pytf.job import Job
 from pytf.mockdatetime import MockDateTime
 from pytf.config import Config
