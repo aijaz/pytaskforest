@@ -32,3 +32,6 @@ sudo rabbitmqctl add_vhost myvhost
 sudo rabbitmqctl set_user_tags myuser mytag
 sudo rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"
 
+
+celery -A pytf.pytf_worker worker --loglevel=INFO -Q default --concurrency=1
+celery -A pytf.pytf_worker worker --loglevel=INFO -Q foobarq --concurrency=1
