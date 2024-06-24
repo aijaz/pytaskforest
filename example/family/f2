@@ -1,6 +1,6 @@
 start = "0000"
 
    j6()
-    f1()
+    f1(queue="foobarq")
    j7()
    f127()
