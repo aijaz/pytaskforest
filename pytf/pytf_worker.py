@@ -37,7 +37,11 @@ def run(todays_log_dir: str,
     start_small = now.strftime("%Y%m%d%H%M%S")
     start_pretty = MockDateTime.now().astimezone(pytz.timezone(job_tz)).strftime("%Y/%m/%d %H:%M:%S")
     info_path = os.path.join(todays_log_dir,
-                             f"{family_name}.{job_name}.x.x.{start_small}.info")
+                             f"{family_name}.{job_name}.{job_queue_name}.x.{start_small}.info")
+
+    if os.path.exists(info_path):
+        run_logger.warn(f"Not writing to info file {info_path} because the file already exists")
+        return
 
     with open(info_path, "w") as f:
         f.write(f'family_name = "{family_name}"\n')
@@ -51,7 +55,7 @@ def run(todays_log_dir: str,
     err = run_shell_script(script_path)
 
     with open(info_path, "a") as f:
-        f.write(f'error_code = {err}')
+        f.write(f'error_code = {err}\n')
 
 
 @celery_app.task(name='celery.run_task')
