@@ -72,7 +72,7 @@ class Config():
             obj.web_hook = obj.set_if_not_none('web_hook', obj.web_hook)
             obj.hook_auth = obj.set_if_not_none('hook_auth', obj.hook_auth)
             obj.primary_tz = obj.set_if_not_none('primary_tz', obj.primary_tz)
-            obj.run_local = obj.set_if_not_none('run_local', obj.primary_tz)
+            obj.run_local = obj.set_if_not_none('run_local', obj.run_local)
 
             return obj
         except tomlkit.exceptions.UnexpectedCharError as e:
