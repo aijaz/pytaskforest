@@ -4,6 +4,7 @@ import tomlkit.items
 
 import pytf.exceptions as ex
 
+
 def parse_time(d, field_parent_name, field_name, exception_str) -> (int | None, int | None):
     if val := d.get(field_name):
         if len(val) != 4:

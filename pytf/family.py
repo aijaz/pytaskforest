@@ -13,7 +13,6 @@ from .config import Config
 from .calendar import Calendar
 from .dependency import JobDependency, TimeDependency
 from .days import Days
-from .external_dependency import ExternalDependency
 from .job import Job
 import pytf.logs
 from .mockdatetime import MockDateTime

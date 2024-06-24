@@ -7,6 +7,7 @@ import pytz
 from .config import Config
 from .mockdatetime import MockDateTime, MockSleep
 from .runner import prepare_required_dirs, run_shell_script
+from .pytf_worker import run_task
 from .status import status_and_families
 
 
@@ -58,7 +59,7 @@ def main_function(config: Config):
             logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} locally")
             run_logger.info(f"Run Logger: Gonna run job {job['family_name']}::{job['job_name']} locally")
             script_path = os.path.join(config.job_dir, job['job_name'])
-            now = MockDateTime.now(config.primary_tz    )
+            now = MockDateTime.now(config.primary_tz)
             start_small = now.strftime("%Y%m%d%H%M%S")
             start_pretty = MockDateTime.now().astimezone(pytz.timezone(job['tz'])).strftime("%Y/%m/%d %H:%M:%S")
 
@@ -75,4 +76,12 @@ def main_function(config: Config):
             with open(info_path, "a") as f:
                 f.write(f'error_code = {err}')
         else:
-            logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} remotely")
+            logger.info(f"Queuing job {job['family_name']}::{job['job_name']} on queue: {job['queue_name']}")
+            run_task.delay(config.todays_log_dir,
+                           config.job_dir,
+                           config.primary_tz,
+                           job['family_name'],
+                           job['job_name'],
+                           job['tz'],
+                           job['queue_name'],
+                           job_log_file)
