@@ -3,6 +3,5 @@ FROM python:slim
 WORKDIR /
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
-RUN mkdir pytf
-COPY pytf pytf
-ENTRYPOINT ["celery", "-A", "pytf.pytf_worker", "worker", "--loglevel=INFO", "-Q", "default", "--concurrency=1"]
+COPY pytf/pytf_worker.py .
+ENTRYPOINT ["celery", "-A", "pytf_worker", "worker", "--loglevel=INFO", "-Q", "default", "--concurrency=1"]
