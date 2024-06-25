@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import logging
 import logging.config
 import os
@@ -5,8 +6,6 @@ import os
 from celery import Celery
 import pytz
 
-from pytf.pytf_logging import get_logging_config
-from pytf.mockdatetime import MockDateTime
 from pytf.runner import run_shell_script
 
 
@@ -33,9 +32,9 @@ def run(todays_log_dir: str,
 
     script_path = os.path.join(job_dir, job_name)
     run_logger.info(f"Run Logger: Worker gonna run job {family_name}::{job_name}: {script_path}")
-    now = MockDateTime.now(primary_tz)
+    now = tznow(primary_tz)
     start_small = now.strftime("%Y%m%d%H%M%S")
-    start_pretty = MockDateTime.now().astimezone(pytz.timezone(job_tz)).strftime("%Y/%m/%d %H:%M:%S")
+    start_pretty = tznow().astimezone(pytz.timezone(job_tz)).strftime("%Y/%m/%d %H:%M:%S")
     info_path = os.path.join(todays_log_dir,
                              f"{family_name}.{job_name}.{job_queue_name}.x.{start_small}.info")
 
@@ -75,3 +74,7 @@ def run_task(todays_log_dir: str,
         job_tz,
         job_queue_name,
         job_log_file)
+
+
+def tznow(tz: str="UTC") -> datetime:
+    return datetime.now(timezone.utc).astimezone(pytz.timezone(tz))
