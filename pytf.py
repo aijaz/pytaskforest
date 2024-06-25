@@ -5,6 +5,7 @@ import os
 import logging.config
 import logging
 import pathlib
+import time
 
 import click
 
@@ -90,6 +91,9 @@ def coalesce(d1, d2, root_d):
 @pytf.command()
 @click.pass_context
 def main(context):
+    for i in range(15, 0, -1):
+        logger.info(f"{i}")
+        time.sleep(1)
     config = context.obj['config']
     pytf_main(config)
 

@@ -1,8 +1,9 @@
-FROM python:3.12
+FROM python:alpine
 
 WORKDIR /
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY pytf .
+RUN pip3 install --no-cache-dir -r requirements.txt
+RUN mkdir pytf
+COPY pytf/* pytf
 COPY pytf.py .
-ENTRYPOINT ["python3", "-u"]
+ENTRYPOINT ["python3", "-u", "/pytf.py", "main"]

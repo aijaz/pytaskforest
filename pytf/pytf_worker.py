@@ -10,7 +10,7 @@ from pytf.mockdatetime import MockDateTime
 from pytf.runner import run_shell_script
 
 
-celery_app = Celery('celery_worker', broker="amqp://myuser:mypassword@localhost:5672/myvhost")
+celery_app = Celery('celery_worker', broker='pyamqp://guest:guest@rabbitmq_c//')
 
 
 def run(todays_log_dir: str,
@@ -31,8 +31,8 @@ def run(todays_log_dir: str,
     run_logger.addHandler(handler)
     run_logger.propagate = False
 
-    run_logger.info(f"Run Logger: Gonna run job {family_name}::{job_name} locally")
     script_path = os.path.join(job_dir, job_name)
+    run_logger.info(f"Run Logger: Worker gonna run job {family_name}::{job_name}: {script_path}")
     now = MockDateTime.now(primary_tz)
     start_small = now.strftime("%Y%m%d%H%M%S")
     start_pretty = MockDateTime.now().astimezone(pytz.timezone(job_tz)).strftime("%Y/%m/%d %H:%M:%S")

@@ -44,12 +44,6 @@ def get_logging_config(log_dir: str):
                 "maxBytes": 10000000,
                 "backupCount": 10,
             },
-            "queue_handler": {
-                "class": "logging.handlers.QueueHandler",
-                "handlers": ["console", "file"],
-                "respect_handler_level": True,
-                "comments": "view https://www.youtube.com/watch?v=9L77QExPmI0 for notes on this"
-            }
         },
         "loggers": {
             "root": {

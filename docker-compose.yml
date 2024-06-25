@@ -5,12 +5,17 @@ services:
       image: pytf_i
       volumes:
          - ./example:/pytf_root
-      command:
-         -  /pytf.py main
+      depends_on:
+         - rabbitmq_c
 
    worker_c:
       image: worker_i
       volumes:
          - ./example:/pytf_root
-      command:
-         -  celery -A pytf.pytf_worker worker --loglevel=INFO -Q default --concurrency=1
+      depends_on:
+         - rabbitmq_c
+
+   rabbitmq_c:
+      image: rabbitmq_i
+      ports:
+      - 5672:5672

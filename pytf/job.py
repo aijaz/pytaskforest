@@ -81,7 +81,7 @@ class Job:
         j.token = d.get('token')
         j.num_retries = d.get('num_retries')
         j.retry_sleep_min = d.get('retry_sleep_min')
-        j.queue = d.get('queue')
+        j.queue = d.get('queue', 'default')
         j.email = d.get('email')
         j.retry_email = d.get('retry_email')
         j.retry_success_email = d.get('retry_success-email')
