@@ -4,5 +4,3 @@ WORKDIR /
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY pytf .
-COPY pytf.py .
-ENTRYPOINT ["celery", "-A pytf.pytf_worker", "worker", "--loglevel=INFO", "-Q default", "--concurrency=1"]

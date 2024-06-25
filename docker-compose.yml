@@ -1,23 +1,16 @@
 version: '3'
 
 services:
-   aijaz_nginx_c:
-      image: aijaz_nginx_i
+   pytf_c:
+      image: pytf_i
       volumes:
-         - ./document_root:/var/www/document_root
-      ports:
-         - "80:80"
+         - ./example:/pytf_root
+      command:
+         -  /pytf.py main
 
-   aijaz_flask_c:
-      image: aijaz_flask_i
-      expose:
-         - "8000"
-
-   aijaz_pg_c:
-      image: aijaz_pg_i
-      ports:
-         - 5432:5432
+   worker_c:
+      image: worker_i
       volumes:
-         -  /tmp/pg_data:/var/lib/postgresql/data
-      environment:
-         - POSTGRES_PASSWORD='mysecretpassword'
+         - ./example:/pytf_root
+      command:
+         -  celery -A pytf.pytf_worker worker --loglevel=INFO -Q default --concurrency=1
