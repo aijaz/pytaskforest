@@ -25,7 +25,7 @@ def run(todays_log_dir: str,
     run_logger.setLevel(logging.INFO)
     handler = logging.FileHandler(filename=job_log_file)
     handler.setFormatter(logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%dT%H:%M:%S%z"))
-    handler.setLevel(logging.DEBUG)
+    handler.setLevel(logging.INFO)
     for old_handler in run_logger.handlers:
         run_logger.removeHandler(old_handler)
     run_logger.addHandler(handler)
@@ -67,7 +67,6 @@ def run_task(todays_log_dir: str,
         job_tz: str,
         job_queue_name: str,
         job_log_file: str):
-    setup_logging(todays_log_dir)
     run(todays_log_dir,
         job_dir,
         primary_tz,
@@ -76,10 +75,3 @@ def run_task(todays_log_dir: str,
         job_tz,
         job_queue_name,
         job_log_file)
-
-
-def setup_logging(log_dir: str):
-    logging.config.dictConfig(get_logging_config(log_dir))
-    _ = logging.getLogger('runner')
-
-

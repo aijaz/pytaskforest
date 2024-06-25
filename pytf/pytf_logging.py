@@ -33,12 +33,12 @@ def get_logging_config(log_dir: str):
             "console": {
                 "class": "logging.StreamHandler",
                 "formatter": "simple",
-                "level": "DEBUG",
+                "level": "INFO",
                 "stream": "ext://sys.stdout",
             },
             "file": {
                 "class": "logging.handlers.RotatingFileHandler",
-                "level": "DEBUG",
+                "level": "INFO",
                 "formatter": "detailed",
                 "filename": os.path.join(log_dir, "pytf.log"),
                 "maxBytes": 10000000,

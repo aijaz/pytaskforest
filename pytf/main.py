@@ -38,7 +38,7 @@ def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run)
         function_to_run(config)  # Assume this takes less than a minute to run
         now: datetime.datetime = MockDateTime.now(tz=config.primary_tz)
         sleep_time_left = sleep_time - (now.second % sleep_time)
-        logger.debug(f"Sleeping for {sleep_time_left}")
+        logger.info(f"Sleeping for {sleep_time_left}")
         MockSleep.sleep(sleep_time_left)
 
 
