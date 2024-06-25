@@ -12,7 +12,7 @@ def get_logging_config(log_dir: str):
                 "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             },
             "detailed": {
-                "format": "%(asctime)s %(module)s:%(linenum)d %(levelname)s %(message)s",
+                "format": "%(asctime)s %(module)s:%(lineno)d %(levelname)s %(message)s",
                 "datefmt": "%Y-%m-%dT%H:%M:%S%z",
             },
             "json": {
@@ -39,8 +39,8 @@ def get_logging_config(log_dir: str):
             "file": {
                 "class": "logging.handlers.RotatingFileHandler",
                 "level": "DEBUG",
-                "formatter": "json",
-                "filename": filename,
+                "formatter": "detailed",
+                "filename": os.path.join(log_dir, "pytf.log"),
                 "maxBytes": 10000000,
                 "backupCount": 10,
             },
