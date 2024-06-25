@@ -4,18 +4,14 @@ services:
    pytf_c:
       image: pytf_i
       volumes:
-         - type: bind
-           source: /Users/aijaz/src/Aijaz/pytaskforest/example
-           target: /pytf_root
+         - /Users/aijaz/src/Aijaz/pytaskforest/example:/pytf_root
       depends_on:
          - rabbitmq_c
 
    worker_c:
       image: worker_i
       volumes:
-         - type: bind
-           source: /Users/aijaz/src/Aijaz/pytaskforest/example
-           target: /pytf_root
+         - /Users/aijaz/src/Aijaz/pytaskforest/example:/pytf_root
       depends_on:
          - rabbitmq_c
 
