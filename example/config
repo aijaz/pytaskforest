@@ -1,0 +1,9 @@
+run_local = true
+
+calendars.daily = [
+  "*/*/*"
+]
+calendars.mondays = [
+  "every Monday */*"
+]
+primary_tz = "America/Chicago"

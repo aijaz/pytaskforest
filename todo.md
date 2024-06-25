@@ -2,16 +2,16 @@
 
 - [x] Basic Loop
   - [x] Dependencies
-  - [ ] Queues
+  - [x] Queues
 - [x] Status
-- [ ] Script support
 - [ ] Docker
 - [ ] Flask
+- [ ] Script support
+- [ ] Tokens
 - [ ] Mark
 - [ ] Hold
 - [ ] Release Hold
 - [ ] Release Dependencies
-- [ ] Tokens
 
 
 via: https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/rabbitmq.html#installing-rabbitmq-on-macos

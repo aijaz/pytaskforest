@@ -1,7 +1,7 @@
-log_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/log"
-job_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/job"
-family_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/family"
-instructions_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/instruction"
+log_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/logs"
+job_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/jobs"
+family_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/families"
+instructions_dir = "/Users/aijaz/src/Aijaz/pytaskforest/example/instructions"
 run_local = true
 
 calendars.daily = [

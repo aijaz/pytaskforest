@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import logging.config
 import logging
+import pathlib
 
 import click
 
@@ -30,25 +32,41 @@ logger = logging.getLogger('pytf_logger')
 @click.option('--instructions_dir', help='Instructions Directory',
               type=click.Path(file_okay=False, dir_okay=True, exists=True))
 @click.option('--config_file', help="Config File", type=click.File('r'))
+@click.option('--root', help='Main Directory',
+              type=click.Path(file_okay=False, dir_okay=True, exists=True))
 @click.pass_context
 def pytf(context,
          log_dir,
          family_dir,
          job_dir,
          instructions_dir,
-         config_file
+         config_file,
+         root
          ):
-    if config_file is not None:
+    if root is None: 
+        root = "/pytf_root"
+        
+    root_log_dir = os.path.join(root, "logs") 
+    root_family_dir = os.path.join(root, "families") 
+    root_job_dir = os.path.join(root, "jobs") 
+    root_instruction_dir = os.path.join(root, "instructions")
+    root_config = os.path.join(root, "config")
+
+    if config_file is None:
+        if os.path.exists(root_config):
+            config = Config.from_str(pathlib.Path(root_config).read_text())
+        else:
+            config = Config.from_str("")
+    else:
         toml_str = config_file.read()
         config = Config.from_str(toml_str)
-    else:
-        config = Config(toml_str="")
 
+        
     context.obj['config'] = config
-    config.log_dir = log_dir if log_dir is not None else config.log_dir
-    config.family_dir = family_dir if family_dir is not None else config.family_dir
-    config.job_dir = job_dir if job_dir is not None else config.job_dir
-    config.instructions_dir = instructions_dir if instructions_dir is not None else config.instructions_dir
+    config.log_dir = coalesce(log_dir, config.log_dir, root_log_dir)
+    config.family_dir = coalesce(family_dir, config.family_dir, root_family_dir)
+    config.job_dir = coalesce(job_dir, config.job_dir, root_job_dir)
+    config.instructions_dir = coalesce(instructions_dir, config.instructions_dir, root_instruction_dir)
 
     if config.log_dir is None:
         raise PyTaskforestParseException(MSG_CONFIG_MISSING_LOG_DIR)
@@ -59,6 +77,14 @@ def pytf(context,
     if config.instructions_dir is None:
         raise PyTaskforestParseException(MSG_CONFIG_MISSING_INSTRUCTIONS_DIR)
     setup_logging(config.log_dir)
+
+
+def coalesce(d1, d2, root_d):
+    if d1 is not None:
+        return d1
+    if d2 is not None:
+        return d2
+    return root_d if os.path.exists(root_d) else None
 
 
 @pytf.command()
