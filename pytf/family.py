@@ -1,11 +1,14 @@
+from datetime import datetime, timedelta
 import os
 import re
 
 from attrs import define, field
+import pytz
 import tomlkit
 import tomlkit.exceptions
 import tomlkit.items
 
+from .external_dependency import ExternalDependency
 from .forest import Forest
 import pytf.exceptions as ex
 from .parse_utils import parse_time, lower_true_false, simple_type
@@ -86,13 +89,103 @@ class Family:
 
         cls._create_forests_from_lines(fam, family_name, lines)
 
+        for forest in fam.forests:
+            cls._make_sure_repeating_jobs_are_alone(fam, forest)
+
         # get rid of last forest if it has no jobs
         if len(fam.forests[-1].jobs) == 0:
             fam.forests.pop()
 
         # set up dependencies
         for forest in fam.forests:
+            cls._expand_repeating_jobs_if_necessary(fam, forest)
             cls._setup_forest_dependencies(fam, forest)
+
+    @classmethod
+    def _make_sure_repeating_jobs_are_alone(cls, fam, forest):
+        for jobs in forest.jobs:
+            for job in [j for j in jobs if isinstance(j, Job)]:
+                if job.every and (len(jobs) > 1 or len(forest.jobs) > 1):
+                    raise ex.PyTaskforestParseException(
+                        f"{ex.MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST}: {fam.name}")
+
+    @classmethod
+    def _expand_repeating_jobs_if_necessary(cls, fam, forest):
+        if len(forest.jobs) != 1:
+            return
+        if len(forest.jobs[0]) != 1:
+            return
+
+        job = forest.jobs[0][0]
+
+        if isinstance(job, ExternalDependency):
+            return
+
+        if not job.every:
+            return
+
+        tz = fam.tz or fam.config.primary_tz
+        now = MockDateTime.now(tz)
+        current_start_time = pytz.timezone(tz).localize(datetime(now.year,
+                                                                 now.month,
+                                                                 now.day,
+                                                                 fam.start_time_hr,
+                                                                 fam.start_time_min, 0, 0))
+
+        if job.start_time_hr is not None and job.start_time_min is not None:
+            tz = job.tz or fam.tz or fam.config.primary_tz
+            tj_then = pytz.timezone(tz).localize(datetime(now.year,
+                                                          now.month,
+                                                          now.day,
+                                                          job.start_time_hr,
+                                                          job.start_time_min, 0, 0))
+            current_start_time = max(current_start_time, tj_then)
+
+        if job.until_min is not None and job.until_hr is not None:
+            repeat_end_time = pytz.timezone(tz).localize(datetime(now.year,
+                                                                  now.month,
+                                                                  now.day,
+                                                                  job.until_hr,
+                                                                  job.until_min, 0, 0))
+        else:
+            repeat_end_time = pytz.timezone(tz).localize(datetime(now.year,
+                                                                  now.month,
+                                                                  now.day,
+                                                                  fam.config.end_time_hr,
+                                                                  fam.config.end_time_min, 0, 0))
+
+        job.base_name = job.job_name
+        job.job_name = job.base_name + f"-{current_start_time.hour:02}{current_start_time.minute:02}"
+        current_start_time = current_start_time + timedelta(seconds=job.every)
+        while current_start_time < repeat_end_time:
+            j = Job(job_name=job.base_name + f"-{current_start_time.hour:02}{current_start_time.minute:02}",
+                    script=job.script,
+                    start_time_hr=current_start_time.hour,
+                    start_time_min=current_start_time.minute,
+                    tz=tz,
+                    every=None,
+                    until_hr=None,
+                    until_min=None,
+                    chained=None,
+                    token=list(job.token) if job.token else job.token,
+                    num_retries=job.num_retries,
+                    retry_sleep_min=job.retry_sleep_min,
+                    queue=job.queue,
+                    email=job.email,
+                    retry_email=job.retry_email,
+                    retry_success_email=job.retry_success_email,
+                    no_retry_email=job.no_retry_email,
+                    no_retry_success_email=job.no_retry_success_email,
+                    comment=job.comment,
+                    start_time_met_today=job.start_time_met_today,
+                    family_name=job.family_name,
+                    base_name=job.base_name,
+                    has_actual_start=job.has_actual_start,
+                    status=job.status,
+                    dependencies=job.dependencies
+                    )
+            forest.jobs[0].append(j)
+            current_start_time = current_start_time + timedelta(seconds=job.every)
 
     @classmethod
     def _setup_forest_dependencies(cls, fam, forest):
@@ -127,9 +220,8 @@ class Family:
             tz = job.tz or fam.tz or fam.config.primary_tz
             job.dependencies.add(TimeDependency(fam.config, job.start_time_hr, job.start_time_min, tz))
 
-        if fam.start_time_hr is not None and fam.start_time_min is not None:
-            tz = fam.tz or fam.config.primary_tz
-            job.dependencies.add(TimeDependency(fam.config, fam.start_time_hr, fam.start_time_min, tz))
+        tz = fam.tz or fam.config.primary_tz
+        job.dependencies.add(TimeDependency(fam.config, fam.start_time_hr, fam.start_time_min, tz))
 
     @classmethod
     def _create_forests_from_lines(cls, fam, family_name, lines):
@@ -149,7 +241,6 @@ class Family:
 
             # now we have a line of jobs
             jobs = Forest.split_jobs(line, family_name)
-            # named_jobs = map(lambda j: cls._assign_family_name_to_internal_job(j, family_name), jobs)
             fam.forests[-1].jobs.append(list(jobs))
 
     @classmethod

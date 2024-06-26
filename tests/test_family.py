@@ -88,6 +88,13 @@ def daily_config():
 
 
 @pytest.fixture
+def denver_config():
+    return Config.from_str("""
+    primary_tz = "America/Denver"
+    """)
+
+
+@pytest.fixture
 def two_cal_config():
     return Config.from_str("""
     calendars.daily = [
@@ -194,6 +201,18 @@ def test_family_split_double_data_job_1_chained():
     line = 'J(tz = "GMT", chained=TRUE) E(tz = "America/Denver", start="0200") # foo'
     jobs = Forest.split_jobs(line, '')
     assert jobs[1].chained is None
+
+
+def test_split_jobs_non_repeat():
+    line = "J6()  J7() J8() J9() J2()"
+    jobs = Forest.split_jobs(line, '')
+    assert [j.job_name for j in jobs] == ['J6', 'J7', 'J8', 'J9', 'J2']
+
+
+def test_split_jobs_repeat():
+    line = "J6(every=900)  J7() J8() J9() J2()"
+    jobs = Forest.split_jobs(line, '')
+    assert [j.job_name for j in jobs] == ['J6', 'J7', 'J8', 'J9', 'J2']
 
 
 def test_family_line_one_success_cal_start_time_parse_hour(two_cal_config):
@@ -1069,3 +1088,31 @@ def test_duplicate_jobs(two_cal_config):
     with pytest.raises(ex.PyTaskforestParseException) as excinfo:
         _ = Family.parse("name", family_str, two_cal_config)
     assert str(excinfo.value) == f"{ex.MSG_FAMILY_JOB_TWICE} name::J2"
+
+
+def prep_repeat_family(path, config):
+    family_str = """start="0300", queue="main", email="a@b.c"
+    J1(start="0330", every=1800, until="0500")
+    """
+    MockDateTime.set_mock(2024, 3, 29, 2, 14, 0, 'America/Denver')
+    config.log_dir = os.path.join(path, 'log_dir')
+    config.family_dir = os.path.join(path, 'family_dir')
+    dated_family_dir = dirs.dated_subdir(config.family_dir, MockDateTime.now(tz="America/Denver"))
+    dirs.make_dir(dated_family_dir)
+    with open(os.path.join(dated_family_dir, "F1"), "w") as f:
+        f.write(family_str)
+
+    todays_log_dir = dirs.todays_log_dir(config)
+    dirs.make_dir(todays_log_dir)
+    fam = Family.parse("F1", family_str, config)
+    return fam, todays_log_dir
+
+
+def test_repeat_job_creation(tmp_path, denver_config):
+    prep_repeat_family(tmp_path, denver_config)
+    status_json = status(denver_config)
+    assert [j['job_name'] for j in status_json['status']['flat_list']] == [
+        'J1-0330',
+        'J1-0400',
+        'J1-0430',
+    ]

@@ -28,3 +28,5 @@ MSG_CONFIG_MISSING_LOG_DIR = "Failed to parse config file - Missing log dir"
 MSG_CONFIG_MISSING_JOB_DIR = "Failed to parse config file - Missing job dir"
 MSG_CONFIG_MISSING_FAMILY_DIR = "Failed to parse config file - Missing family dir"
 MSG_CONFIG_MISSING_INSTRUCTIONS_DIR = "Failed to parse config file - Missing instructions dir"
+
+MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST = "Failed to parse Family - repeating jobs should be in a forest by themselves:"
