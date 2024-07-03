@@ -16,7 +16,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SERVER = "http://localhost:8000"
+    SERVER = "http://localhost:8080"
 
 
 class TestingConfig(Config):

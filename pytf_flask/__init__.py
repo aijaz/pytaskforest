@@ -1,7 +1,7 @@
 
 import os
 
-from config import config
+from .config import config
 from flask import Flask, render_template, current_app, g
 
 from .logs import setup_logging
