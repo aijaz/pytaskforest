@@ -1085,9 +1085,9 @@ def test_duplicate_jobs(two_cal_config):
        F3::JB() F4::JC() 
      J99()
     """
-    with pytest.raises(ex.PyTaskforestParseException) as excinfo:
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
         _ = Family.parse("name", family_str, two_cal_config)
-    assert str(excinfo.value) == f"{ex.MSG_FAMILY_JOB_TWICE} name::J2"
+    assert str(exc_info.value) == f"{ex.MSG_FAMILY_JOB_TWICE} name::J2"
 
 
 def prep_repeat_family(path, config):
@@ -1116,3 +1116,51 @@ def test_repeat_job_creation(tmp_path, denver_config):
         'J1-0400',
         'J1-0430',
     ]
+
+
+def test_repeat_in_family_with_non_repeat_different_lines(tmp_path, denver_config):
+    family_str = """start="0300", queue="main", email="a@b.c"
+    J1(start="0330", every=1800, until="0500")
+    J2()
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("F1", family_str, denver_config)
+    assert str(exc_info.value) == f"{ex.MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST} F1"
+
+
+def test_repeat_in_family_with_repeat_different_lines(tmp_path, denver_config):
+    family_str = """start="0300", queue="main", email="a@b.c"
+    J1(start="0330", every=1800, until="0500")
+    J2(start="0430", every=300, until="0500")
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("F1", family_str, denver_config)
+    assert str(exc_info.value) == f"{ex.MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST} F1"
+
+
+def test_repeat_in_family_with_non_repeat_same_lines(tmp_path, denver_config):
+    family_str = """start="0300", queue="main", email="a@b.c"
+    J1(start="0330", every=1800, until="0500") J2()
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("F1", family_str, denver_config)
+    assert str(exc_info.value) == f"{ex.MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST} F1"
+
+
+def test_repeat_in_family_with_repeat_same_lines(tmp_path, denver_config):
+    family_str = """start="0300", queue="main", email="a@b.c"
+    J1(start="0330", every=1800, until="0500") J2(start="0430", every=300, until="0500")
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("F1", family_str, denver_config)
+    assert str(exc_info.value) == f"{ex.MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST} F1"
+
+
+def test_repeat_in_family_by_itself(tmp_path, denver_config):
+    family_str = """start="0300", queue="main", email="a@b.c"
+    J1(start="0330", every=1800, until="0500")
+    -
+    J2()
+    """
+    fam = Family.parse("F1", family_str, denver_config)
+    assert fam

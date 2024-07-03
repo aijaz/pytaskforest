@@ -8,7 +8,6 @@ import time
 from celery import Celery
 import pytz
 
-
 celery_app = Celery('celery_worker', broker='pyamqp://guest:guest@rabbitmq_c//')
 
 
@@ -32,14 +31,14 @@ def run(todays_log_dir: str,
 
     script_path = os.path.join(job_dir, job_name)
     run_logger.info(f"Run Logger: Worker gonna run job {family_name}::{job_name}: {script_path}")
-    now = tznow(primary_tz)
+    now = time_zoned_now(primary_tz)
     start_small = now.strftime("%Y%m%d%H%M%S")
-    start_pretty = tznow().astimezone(pytz.timezone(job_tz)).strftime("%Y/%m/%d %H:%M:%S")
+    start_pretty = time_zoned_now().astimezone(pytz.timezone(job_tz)).strftime("%Y/%m/%d %H:%M:%S")
     info_path = os.path.join(todays_log_dir,
                              f"{family_name}.{job_name}.{job_queue_name}.x.{start_small}.info")
 
     if os.path.exists(info_path):
-        run_logger.warn(f"Not writing to info file {info_path} because the file already exists")
+        run_logger.warning(f"Not writing to info file {info_path} because the file already exists")
         return
 
     with open(info_path, "w") as f:
@@ -59,13 +58,13 @@ def run(todays_log_dir: str,
 
 @celery_app.task(name='celery.run_task')
 def run_task(todays_log_dir: str,
-        job_dir: str,
-        primary_tz: str,
-        family_name: str,
-        job_name: str,
-        job_tz: str,
-        job_queue_name: str,
-        job_log_file: str):
+             job_dir: str,
+             primary_tz: str,
+             family_name: str,
+             job_name: str,
+             job_tz: str,
+             job_queue_name: str,
+             job_log_file: str):
     run(todays_log_dir,
         job_dir,
         primary_tz,
@@ -76,7 +75,7 @@ def run_task(todays_log_dir: str,
         job_log_file)
 
 
-def tznow(tz: str="UTC") -> datetime:
+def time_zoned_now(tz: str = "UTC") -> datetime:
     return datetime.now(timezone.utc).astimezone(pytz.timezone(tz))
 
 
@@ -111,4 +110,3 @@ def run_shell_script(script_path: str):
     process.stdout.close()
     process.stderr.close()
     return err_code
-

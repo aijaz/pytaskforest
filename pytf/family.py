@@ -107,7 +107,7 @@ class Family:
             for job in [j for j in jobs if isinstance(j, Job)]:
                 if job.every and (len(jobs) > 1 or len(forest.jobs) > 1):
                     raise ex.PyTaskforestParseException(
-                        f"{ex.MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST}: {fam.name}")
+                        f"{ex.MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST} {fam.name}")
 
     @classmethod
     def _expand_repeating_jobs_if_necessary(cls, fam, forest):
