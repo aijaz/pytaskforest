@@ -141,6 +141,14 @@ def status(context, json, collapse):
                                start_time="Start",
                                tz="TZ",
                                error_code="Ret"))
+    print(format_string.format(family_name="-" * widths['fn'],
+                               job_name="-" * widths['jn'],
+                               queue_name="-" * widths['qn'],
+                               status="-" * widths['st'],
+                               start_time="-" * widths['dt'],
+                               tz="-" * widths['tz'],
+                               error_code="-" * widths['ec'],
+                               ))
 
     for rec in flat_list:
         for possibly_none in ('start_time', 'error_code'):
