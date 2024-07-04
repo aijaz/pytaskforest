@@ -23,6 +23,7 @@ from pytf.hold import hold as pytf_hold
 from pytf.pytf_logging import get_logging_config
 from pytf.status import status as pytf_status
 from pytf.release_hold import release_hold as pytf_release_hold
+from pytf.mockdatetime import MockDateTime
 
 
 @click.group()
@@ -123,14 +124,16 @@ def status(context, json, collapse):
         widths['tz'] = max(widths['tz'], coalesce(rec, 'tz'))
         widths['dt'] = max(widths['dt'], coalesce(rec, 'start_time'))
 
-    format_string = f"{{family_name:<{widths['fn']}}} " + \
-                    f"{{job_name:<{widths['jn']}}} " + \
-                    f"{{queue_name:<{widths['qn']}}} " + \
-                    f"{{status:<{widths['st']}}} " + \
-                    f"{{start_time:<{widths['dt']}}} " + \
-                    f"{{tz:<{widths['tz']}}} " + \
+    format_string = f"{{family_name:<{widths['fn']}}} | " + \
+                    f"{{job_name:<{widths['jn']}}} | " + \
+                    f"{{queue_name:<{widths['qn']}}} | " + \
+                    f"{{status:<{widths['st']}}} | " + \
+                    f"{{start_time:<{widths['dt']}}} | " + \
+                    f"{{tz:<{widths['tz']}}} | " + \
                     f"{{error_code:<{widths['ec']}}} "
 
+    display_time = MockDateTime.now(tz=config.primary_tz)
+    print(f"Status as of {display_time.strftime('%Y/%m/%d %H:%M:%S')} ({config.primary_tz})\n")
     print(format_string.format(family_name="Family",
                                job_name="Job",
                                queue_name="Queue",

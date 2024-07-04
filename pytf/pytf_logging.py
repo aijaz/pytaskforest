@@ -8,8 +8,6 @@ def get_logging_config(log_dir: str):
         print("**** Creating log file")
         open("/pytf_root/logs/pytf.log", 'a').close()  # create empty log file
         # via https://stackoverflow.com/a/74059469
-    else:
-        print("Log file exists")
 
     return {
         "version": 1,
