@@ -145,6 +145,10 @@ def status(context, json, collapse):
         print(format_string.format(**rec))
 
 
+
+
+
+
 @pytf.command()
 @click.argument('family')
 @click.argument('job')
@@ -183,13 +187,9 @@ def release_hold(context, family, job):
 
 
 def setup_logging(log_dir: str):
-    if not os.path.exists(os.path.join(log_dir, 'pytf.log')):
-        print("**** Creating log file")
-        open("/pytf_root/logs/pytf.log", 'a').close()  # create empty log file
-        # via https://stackoverflow.com/a/74059469
-
     logging_dict = get_logging_config(log_dir)
     logging.config.dictConfig(logging_dict)
+    # _ = logging.getLogger('runner')
 
 
 if __name__ == '__main__':
