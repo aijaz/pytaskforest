@@ -4,7 +4,8 @@ set -e
 
 docker-compose down
 ./docker-remove-all.sh
-touch example/logs/pytf.log
+#touch example/logs/pytf.log
+#/bin/rm -f example/logs/pytf.log
 ./cleanup_example.sh
 ./build_all.sh
 if [ -e example/logs/pytf.log ]; then
