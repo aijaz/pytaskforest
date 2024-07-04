@@ -9,6 +9,7 @@ from .mockdatetime import MockDateTime, MockSleep
 from .runner import prepare_required_dirs, run_shell_script
 from .pytf_worker import run_task
 from .status import status_and_families
+import pytf.dirs as dirs
 
 
 def main(config: Config):
@@ -32,6 +33,8 @@ def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run)
     while True:
         # primary_tz is used for the start and end time of the main loop
         now: datetime.datetime = MockDateTime.now(config.primary_tz)
+        todays_family_dir = dirs.dated_dir(os.path.join(config.family_dir, "{YYYY}{MM}{DD}"), now)
+        dirs.copy_files_from_dir_to_dir(config.family_dir, todays_family_dir)
         if now >= end_time:
             break
 
