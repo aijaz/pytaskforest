@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import json
+import json as j
 import os
 import logging.config
 import logging
@@ -24,7 +24,6 @@ from pytf.pytf_logging import get_logging_config
 from pytf.status import status as pytf_status
 from pytf.release_hold import release_hold as pytf_release_hold
 
-logger = logging.getLogger('pytf_logger')
 
 @click.group()
 @click.option('--log_dir', help='Log Directory', type=click.Path(file_okay=False, dir_okay=True, exists=True))
@@ -44,12 +43,12 @@ def pytf(context,
          config_file,
          root
          ):
-    if root is None: 
+    if root is None:
         root = "/pytf_root"
-        
-    root_log_dir = os.path.join(root, "logs") 
-    root_family_dir = os.path.join(root, "families") 
-    root_job_dir = os.path.join(root, "jobs") 
+
+    root_log_dir = os.path.join(root, "logs")
+    root_family_dir = os.path.join(root, "families")
+    root_job_dir = os.path.join(root, "jobs")
     root_instruction_dir = os.path.join(root, "instructions")
     root_config = os.path.join(root, "config")
 
@@ -62,7 +61,6 @@ def pytf(context,
         toml_str = config_file.read()
         config = Config.from_str(toml_str)
 
-        
     context.obj['config'] = config
     config.log_dir = coalesce(log_dir, config.log_dir, root_log_dir)
     config.family_dir = coalesce(family_dir, config.family_dir, root_family_dir)
@@ -91,6 +89,7 @@ def coalesce(d1, d2, root_d):
 @pytf.command()
 @click.pass_context
 def main(context):
+    logger = logging.getLogger('pytf_logger')
     for i in range(10, 0, -1):
         logger.info(f"{i}")
         time.sleep(1)
@@ -99,11 +98,55 @@ def main(context):
 
 
 @pytf.command()
+@click.option("--json", is_flag=True, show_default=True, default=False, help="Output JSON")
+@click.option("--collapse", is_flag=True, show_default=True, default=True, help="Collapse Repeating Jobs")
 @click.pass_context
-def status(context):
+def status(context, json, collapse):
+    def coalesce(r, k):
+        return len(r.get(k)) if r.get(k) is not None else 0
+
     config = context.obj['config']
-    status = pytf_status(config)
-    print(json.dumps(status))
+    statuses = pytf_status(config)
+
+    if json:
+        print(j.dumps(statuses))
+        return
+
+    flat_list = statuses['status']['flat_list']
+    widths = {"fn": 6, "jn": 3, "st": 6, "qn": 5, "tz": 2, "dt": 5, "ec": 3}
+
+    for rec in flat_list:
+        widths['fn'] = max(widths['fn'], coalesce(rec, 'family_name'))
+        widths['jn'] = max(widths['jn'], coalesce(rec, 'job_name'))
+        widths['st'] = max(widths['st'], coalesce(rec, 'status'))
+        widths['qn'] = max(widths['qn'], coalesce(rec, 'queue_name'))
+        widths['tz'] = max(widths['tz'], coalesce(rec, 'tz'))
+        widths['dt'] = max(widths['dt'], coalesce(rec, 'start_time'))
+
+    format_string = f"{{family_name:<{widths['fn']}}} " + \
+                    f"{{job_name:<{widths['jn']}}} " + \
+                    f"{{queue_name:<{widths['qn']}}} " + \
+                    f"{{status:<{widths['st']}}} " + \
+                    f"{{start_time:<{widths['dt']}}} " + \
+                    f"{{tz:<{widths['tz']}}} " + \
+                    f"{{error_code:<{widths['ec']}}} "
+
+    print(format_string.format(family_name="Family",
+                               job_name="Job",
+                               queue_name="Queue",
+                               status="Status",
+                               start_time="Start",
+                               tz="TZ",
+                               error_code="Ret"))
+
+    for rec in flat_list:
+        for possibly_none in ('start_time', 'error_code'):
+            rec[possibly_none] = "" if rec[possibly_none] is None else rec[possibly_none]
+        print(format_string.format(**rec))
+
+
+
+
 
 
 @pytf.command()
@@ -144,8 +187,9 @@ def release_hold(context, family, job):
 
 
 def setup_logging(log_dir: str):
-    logging.config.dictConfig(get_logging_config(log_dir))
-    _ = logging.getLogger('runner')
+    logging_dict = get_logging_config(log_dir)
+    logging.config.dictConfig(logging_dict)
+    # _ = logging.getLogger('runner')
 
 
 if __name__ == '__main__':

@@ -16,6 +16,7 @@
   - [ ] Hold
   - [ ] Release Hold
   - [ ] Release Dependencies
+  - [ ] Rerun
   - [ ] Click through logs
 - [ ] Script support
 - [ ] Tokens
@@ -23,6 +24,7 @@
 - [ ] Hold
 - [ ] Release Hold
 - [ ] Release Dependencies
+- [ ] Rerun
 
 
 
