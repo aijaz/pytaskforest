@@ -9,7 +9,11 @@ from .job_status import JobStatus
 
 
 def get_held_jobs(log_dir: str):
-    ...
+    return {}
+
+
+def get_released_jobs(log_dir: str):
+    return {}
 
 
 def get_logged_job_results(log_dir: str) -> ([JobResult], dict[str, object]):
