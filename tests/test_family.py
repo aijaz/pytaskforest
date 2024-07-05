@@ -1235,10 +1235,24 @@ def test_mark_success_to_failure_orig_error_code_twice(two_cal_config_chicago, t
 def test_mark_success_to_failure_wrong_name(two_cal_config_chicago, tmp_path):
     fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
     _ = status(two_cal_config_chicago)  # needed to create required dirs
-    info_file = create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
     MockDateTime.set_mock(2024, 2, 14, 2, 15, 23, 'America/Chicago')
     with pytest.raises(ex.PyTaskforestParseException) as exc_info:
         mark(two_cal_config_chicago, 'F_UNKNOWN', 'JA', 1)
     assert str(exc_info.value) == f"{ex.MSG_CANT_FIND_SINGLE_JOB_INFO_FILE} F_UNKNOWN:JA"
 
 
+def test_mark_repeat_job(tmp_path, denver_config):
+    prep_repeat_family(tmp_path, denver_config)
+    status_json = status(denver_config)
+    assert [j['job_name'] for j in status_json['status']['flat_list']] == [
+        'J1-0330',
+        'J1-0400',
+        'J1-0430',
+    ]
+    info_file = create_job_done_file(denver_config.todays_log_dir, 'F1', 'J1-0330', 'America/Denver', 'q', 'w', '20240601010203', 0)
+    MockDateTime.set_mock(2024, 2, 14, 3, 31, 23, 'America/Denver')
+    mark(denver_config, 'F1', 'J1-0330', 12)
+    info_dict = tomlkit.loads(pathlib.Path(os.path.join(denver_config.todays_log_dir, info_file)).read_text())
+    assert info_dict['original_error_code_20240214_033123'] == 0
+    assert info_dict['error_code'] == 12

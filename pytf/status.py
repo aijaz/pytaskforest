@@ -65,10 +65,11 @@ def _get_job_status(family, job_name, logged_jobs_dict, job_queue, job_tz, resul
         job_result_dict = asdict(logged_jobs_dict[family_name].get(job_name), value_serializer=serializer)
     else:
         unmet = [True for d in family.jobs_by_name[job_name].dependencies if d.met(logged_jobs_dict) is False]
-
+        # if hold file is present, set hold to 1
+        hold = False
         the_job_result = JobResult(family_name,
                                    job_name,
-                                   JobStatus.WAITING if unmet else JobStatus.READY,
+                                   JobStatus.HOLD if hold else JobStatus.WAITING if unmet else JobStatus.READY,
                                    job_queue,
                                    job_tz)
         # noinspection PyTypeChecker

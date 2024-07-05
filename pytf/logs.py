@@ -8,6 +8,10 @@ from .job_result import JobResult
 from .job_status import JobStatus
 
 
+def get_held_jobs(log_dir: str):
+    ...
+
+
 def get_logged_job_results(log_dir: str) -> ([JobResult], dict[str, object]):
     """
     File names are FamilyName.JobName.queue.worker_name.start_time_local.info

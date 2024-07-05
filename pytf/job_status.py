@@ -8,4 +8,4 @@ class JobStatus(Enum):
     RUNNING = "Running"
     SUCCESS = "Success"
     FAILURE = "Failure"
-
+    HOLD = "On Hold"
