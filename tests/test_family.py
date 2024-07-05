@@ -1,6 +1,8 @@
 import os
+import pathlib
 
 import pytest
+import tomlkit
 
 import pytf.dirs as dirs
 import pytf.exceptions as ex
@@ -14,6 +16,7 @@ from pytf.job import Job
 from pytf.mockdatetime import MockDateTime
 from pytf.config import Config
 from pytf.status import status
+from pytf.mark import mark
 
 
 @pytest.fixture
@@ -751,7 +754,8 @@ def test_external_deps_not_enough_if_time_dep_exists(two_cal_config_chicago, tmp
 
 
 def create_job_done_file(d, fn, jn, tz, q, w, st, ec):
-    with open(os.path.join(d, f"{fn}.{jn}.{q}.{w}.{st}.info"), "w") as f:
+    file_name = f"{fn}.{jn}.{q}.{w}.{st}.info"
+    with open(os.path.join(d, file_name), "w") as f:
         f.write(f'family_name = "{fn}"\n')
         f.write(f'job_name = "{jn}"\n')
         f.write(f'tz = "{tz}"\n')
@@ -759,6 +763,7 @@ def create_job_done_file(d, fn, jn, tz, q, w, st, ec):
         f.write(f'worker_name = "{w}"\n')
         f.write('start_time = "{st}"\n')
         f.write(f'error_code = {ec}\n')
+    return file_name
 
 
 def test_all_ready_jobs_modified_as_jobs_complete(two_cal_config_chicago, tmp_path):
@@ -1164,3 +1169,76 @@ def test_repeat_in_family_by_itself(tmp_path, denver_config):
     """
     fam = Family.parse("F1", family_str, denver_config)
     assert fam
+
+
+def test_mark_success_to_failure(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Waiting',
+        'Ready', 'Ready', 'Ready',
+    ]
+
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Waiting',
+        'Success', 'Ready', 'Ready',
+    ]
+
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 23, 'America/Chicago')
+    mark(two_cal_config_chicago, 'F2', 'JA', 1)
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Waiting',
+        'Failure', 'Ready', 'Ready',
+    ]
+
+def test_mark_success_to_failure_error_code(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    _ = status(two_cal_config_chicago)  # needed to create required dirs
+    info_file = create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 23, 'America/Chicago')
+    mark(two_cal_config_chicago, 'F2', 'JA', 1)
+    info_dict = tomlkit.loads(pathlib.Path(os.path.join(two_cal_config_chicago.todays_log_dir, info_file)).read_text())
+    assert info_dict['error_code'] == 1
+
+
+def test_mark_success_to_failure_orig_error_code(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    _ = status(two_cal_config_chicago)  # needed to create required dirs
+    info_file = create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 23, 'America/Chicago')
+    mark(two_cal_config_chicago, 'F2', 'JA', 1)
+    info_dict = tomlkit.loads(pathlib.Path(os.path.join(two_cal_config_chicago.todays_log_dir, info_file)).read_text())
+    assert info_dict['original_error_code_20240214_021523'] == 0
+
+
+def test_mark_success_to_failure_orig_error_code_twice(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    _ = status(two_cal_config_chicago)  # needed to create required dirs
+    info_file = create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 23, 'America/Chicago')
+    mark(two_cal_config_chicago, 'F2', 'JA', 1)
+    MockDateTime.set_mock(2024, 2, 14, 2, 16, 23, 'America/Chicago')
+    mark(two_cal_config_chicago, 'F2', 'JA', 0)
+    info_dict = tomlkit.loads(pathlib.Path(os.path.join(two_cal_config_chicago.todays_log_dir, info_file)).read_text())
+    assert info_dict['original_error_code_20240214_021523'] == 0
+    assert info_dict['original_error_code_20240214_021623'] == 1
+    assert info_dict['error_code'] == 0
+
+
+def test_mark_success_to_failure_wrong_name(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    _ = status(two_cal_config_chicago)  # needed to create required dirs
+    info_file = create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 23, 'America/Chicago')
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        mark(two_cal_config_chicago, 'F_UNKNOWN', 'JA', 1)
+    assert str(exc_info.value) == f"{ex.MSG_CANT_FIND_SINGLE_JOB_INFO_FILE} F_UNKNOWN:JA"
+
+

@@ -30,3 +30,4 @@ MSG_CONFIG_MISSING_FAMILY_DIR = "Failed to parse config file - Missing family di
 MSG_CONFIG_MISSING_INSTRUCTIONS_DIR = "Failed to parse config file - Missing instructions dir"
 
 MSG_FOREST_REPEATING_JOBS_SHOULD_BE_ALONE_IN_FOREST = "Failed to parse Family - repeating jobs should be in a forest by themselves:"
+MSG_CANT_FIND_SINGLE_JOB_INFO_FILE = "Failed to find single job info file:"
