@@ -19,10 +19,11 @@ from pytf.exceptions import (PyTaskforestParseException,
 from pytf.main import main as pytf_main
 from pytf.rerun import rerun as pytf_rerun
 from pytf.mark import mark as pytf_mark
-from pytf.hold import hold as pytf_hold
+from pytf.holdAndRelease import hold as pytf_hold
+from pytf.holdAndRelease import remove_hold as pytf_remove_hold
+from pytf.holdAndRelease import release_dependencies as pytf_release_dependencies
 from pytf.pytf_logging import get_logging_config
 from pytf.status import status as pytf_status
-from pytf.release_hold import release_hold as pytf_release_hold
 from pytf.mockdatetime import MockDateTime
 
 
@@ -192,9 +193,18 @@ def hold(context, family, job):
 @click.argument('--family')
 @click.argument('--job')
 @click.pass_context
-def release_hold(context, family, job):
+def remove_hold(context, family, job):
     config = context.obj['config']
-    pytf_release_hold(config, family, job)
+    pytf_remove_hold(config, family, job)
+
+
+@pytf.command()
+@click.argument('--family')
+@click.argument('--job')
+@click.pass_context
+def release_dependencies(context, family, job):
+    config = context.obj['config']
+    pytf_release_dependencies(config, family, job)
 
 
 def setup_logging(log_dir: str):

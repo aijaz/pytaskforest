@@ -17,6 +17,7 @@ from pytf.mockdatetime import MockDateTime
 from pytf.config import Config
 from pytf.status import status
 from pytf.mark import mark
+from pytf.holdAndRelease import (hold, remove_hold, release_dependencies)
 
 
 @pytest.fixture
@@ -1256,3 +1257,108 @@ def test_mark_repeat_job(tmp_path, denver_config):
     info_dict = tomlkit.loads(pathlib.Path(os.path.join(denver_config.todays_log_dir, info_file)).read_text())
     assert info_dict['original_error_code_20240214_033123'] == 0
     assert info_dict['error_code'] == 12
+
+
+def test_hold(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    hold(two_cal_config_chicago, 'F1', 'J6')
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'On Hold', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+
+
+def test_remove_hold(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    hold(two_cal_config_chicago, 'F1', 'J6')
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'On Hold', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+
+
+def test_multiple_hold_remove(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+
+    status_json = status(two_cal_config_chicago) # to create the dirs
+    hold(two_cal_config_chicago, 'F1', 'J6')
+    hold(two_cal_config_chicago, 'F1', 'J6')
+    hold(two_cal_config_chicago, 'F1', 'J6')
+    hold(two_cal_config_chicago, 'F1', 'J6')
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'On Hold', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    remove_hold(two_cal_config_chicago, 'F1', 'J6')
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+
+
+def test_release_deps(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    release_dependencies(two_cal_config_chicago, 'F1', 'J1')  # normally should wait until 3:30
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Ready', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+
