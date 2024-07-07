@@ -38,7 +38,7 @@ class Config():
     def _ignore_regex_default(self):
         return [".*~$", ".*\\.bak$", ".*\\$$"]
 
-    tokens: [PyTfToken] = field(default=None)
+    tokens: [PyTfToken] = field(default=[])
     tokens_by_name: dict = field(default={})
     num_retries: int = field(default=1)
     retry_sleep: int = field(default=300)
@@ -75,13 +75,11 @@ class Config():
             obj.primary_tz = obj.set_if_not_none('primary_tz', obj.primary_tz)
             obj.run_local = obj.set_if_not_none('run_local', obj.run_local)
 
-            temp_tokens = obj.set_if_not_none('tokens', obj.tokens)
-            obj.tokens = []
-            if temp_tokens is not None:
-                obj.tokens.extend(
+            if temp_tokens := obj.set_if_not_none('tokens', obj.tokens):
+                obj.tokens = [
                     PyTfToken(token_dict['name'], token_dict['num_instances'])
                     for token_dict in temp_tokens
-                )
+                ]
                 for tok in obj.tokens:
                     obj.tokens_by_name[tok.name] = tok
 
