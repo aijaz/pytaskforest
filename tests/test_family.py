@@ -1510,14 +1510,14 @@ def prep_token_family(tmp_path, config, family_str):
 def test_token_in_job(one_token_config, tmp_path):
     family_str = """start="0000", queue="main", email="a@b.c"
 
-    J1(token=["T1"])
+    J1(tokens=["T1"])
     """
     fam, todays_log_dir = prep_token_family(tmp_path, one_token_config, family_str)
     ready_job_names = fam.names_of_all_ready_jobs()
     assert ready_job_names == ["J1"]
 
     j:Job = fam.jobs_by_name['J1']
-    t:[str] = j.token
+    t:[str] = j.tokens
     tok_name:str = t[0]
     tok:PyTfToken = one_token_config.tokens_by_name[tok_name]
     assert tok.name == 'T1'
@@ -1528,12 +1528,12 @@ def test_two_tokens_in_job(two_token_config, tmp_path):
     # sourcery skip: extract-duplicate-method
     family_str = """start="0000", queue="main", email="a@b.c"
 
-    J1(token=["T2", "T3"])
+    J1(tokens=["T2", "T3"])
     """
     fam, todays_log_dir = prep_token_family(tmp_path, two_token_config, family_str)
 
     j:Job = fam.jobs_by_name['J1']
-    t:[str] = j.token
+    t:[str] = j.tokens
     assert t == ["T2", "T3"]
 
     tok2:PyTfToken = two_token_config.tokens_by_name['T2']

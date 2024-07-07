@@ -167,7 +167,7 @@ class Family:
                     until_hr=None,
                     until_min=None,
                     chained=None,
-                    token=list(job.token) if job.token else job.token,
+                    tokens=list(job.tokens) if job.tokens else job.tokens,
                     num_retries=job.num_retries,
                     retry_sleep_min=job.retry_sleep_min,
                     queue=job.queue,

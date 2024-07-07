@@ -22,7 +22,7 @@ class Job:
     until_hr: int | None = field(default=None)
     until_min: int | None = field(default=None)
     chained: bool | None = field(default=None)
-    token: list[str] | None = field(default=None)
+    tokens: list[str] | None = field(default=None)
     num_retries: int | None = field(default=None)
     retry_sleep_min: int | None = field(default=None)
     queue: str | None = field(default="default")
@@ -78,7 +78,7 @@ class Job:
         j.tz = d.get('tz')
         j.every = d.get('every')
         j.chained = d.get('chained')
-        j.token = d.get('token')
+        j.tokens = d.get('tokens')
         j.num_retries = d.get('num_retries')
         j.retry_sleep_min = d.get('retry_sleep_min')
         j.queue = d.get('queue', 'default')
@@ -106,7 +106,7 @@ class Job:
     @classmethod
     def validate_str_lists(cls, d, job_name):
         str_lists = [
-            'token',
+            'tokens',
         ]
         for key in [k for k in str_lists if k in d]:
             for i in d[key]:
@@ -160,7 +160,7 @@ class Job:
             'tz',
             'every',
             'chained',
-            'token',
+            'tokens',
             'num_retries',
             'retry_sleep_min',
             'queue',
