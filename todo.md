@@ -11,6 +11,7 @@
   - [x] Test for exceptions if repeat job not in families alone
 - [x] CLI Status
 - [ ] Flask
+  - [ ] Admin/Passwords 
   - [ ] Status
   - [ ] Mark
   - [ ] Hold
@@ -18,13 +19,14 @@
   - [ ] Release Dependencies
   - [ ] Rerun
   - [ ] Click through logs
+  - [ ] Webhooks for emails
 - [ ] Script support
 - [ ] Tokens
 - [x] Mark
 - [x] Hold
 - [x] Release Hold
 - [x] Release Dependencies
-- [ ] Rerun
+- [x] Rerun
 
 
 

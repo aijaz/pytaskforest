@@ -19,6 +19,7 @@ from pytf.status import status
 from pytf.mark import mark
 from pytf.holdAndRelease import (hold, remove_hold, release_dependencies)
 from pytf.rerun import rerun
+from pytf.pytftoken import PyTfToken
 
 
 @pytest.fixture
@@ -89,6 +90,29 @@ def daily_config():
     calendars.daily = [
       "*/*/*"
     ]
+    """)
+
+
+@pytest.fixture
+def two_token_config():
+    return Config.from_str("""
+    primary_tz = "America/Denver"
+    [[tokens]]
+    name="T3"
+    num_instances=3
+    [[tokens]]
+    name="T2"
+    num_instances=2
+    """)
+
+
+@pytest.fixture
+def one_token_config():
+    return Config.from_str("""
+    primary_tz = "America/Denver"
+    [[tokens]]
+    name="T1"
+    num_instances=1
     """)
 
 
@@ -1467,3 +1491,37 @@ def test_mark_success_to_failure_then_rerun_files(two_cal_config_chicago, tmp_pa
     rerun(two_cal_config_chicago, 'F2', 'JA')
     files = os.listdir(two_cal_config_chicago.todays_log_dir)
     assert files == ['F2.JA.release', 'F2.JA-Orig-1.q.w.20240601010203.info']
+
+
+def test_token_in_job(one_token_config, tmp_path):
+    family_str = """start="0000", queue="main", email="a@b.c"
+
+    J1(token=["T1"])
+    """
+    fam, todays_log_dir = prep_token_family(tmp_path, one_token_config, family_str)
+    ready_job_names = fam.names_of_all_ready_jobs()
+    assert ready_job_names == ["J1"]
+
+    j:Job = fam.jobs_by_name['J1']
+    t:[str] = j.token
+    tok_name:str = t[0]
+    tok:PyTfToken = one_token_config.tokens_by_name[tok_name]
+    assert tok.name == 'T1'
+    assert tok.num_instances == 1
+
+
+def prep_token_family(tmp_path, config, family_str):
+    MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
+    config.log_dir = os.path.join(tmp_path, 'log_dir')
+    config.family_dir = os.path.join(tmp_path, 'family_dir')
+    dated_family_dir = dirs.dated_subdir(config.family_dir, MockDateTime.now(tz="America/Chicago"))
+    dirs.make_dir(dated_family_dir)
+    with open(os.path.join(dated_family_dir, "F1"), "w") as f:
+        f.write(family_str)
+    todays_log_dir = dirs.todays_log_dir(config)
+    dirs.make_dir(todays_log_dir)
+    fam = Family.parse("F1", family_str, config)
+    return fam, todays_log_dir
+
+
+

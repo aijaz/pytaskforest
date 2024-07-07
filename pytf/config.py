@@ -33,11 +33,13 @@ class Config():
     log_level: int | None = field(default=logging.WARN)
     ignore_regex: [str] = field()
 
+
     @ignore_regex.default
     def _ignore_regex_default(self):
         return [".*~$", ".*\\.bak$", ".*\\$$"]
 
     tokens: [PyTfToken] = field(default=None)
+    tokens_by_name: dict = field(default={})
     num_retries: int = field(default=1)
     retry_sleep: int = field(default=300)
     web_hook: str = field(default=None)
@@ -66,13 +68,22 @@ class Config():
             obj.chained = obj.set_if_not_none('chained', obj.chained)
             obj.log_level = obj.set_if_not_none('log_level', obj.log_level)  # TODO: Convert this from string to proper type
             obj.ignore_regex = obj.set_if_not_none('ignore_regex', obj.ignore_regex)
-            obj.tokens = obj.set_if_not_none('tokens', obj.tokens)
             obj.num_retries = obj.set_if_not_none('num_retries', obj.num_retries)
             obj.retry_sleep = obj.set_if_not_none('retry_sleep', obj.retry_sleep)
             obj.web_hook = obj.set_if_not_none('web_hook', obj.web_hook)
             obj.hook_auth = obj.set_if_not_none('hook_auth', obj.hook_auth)
             obj.primary_tz = obj.set_if_not_none('primary_tz', obj.primary_tz)
             obj.run_local = obj.set_if_not_none('run_local', obj.run_local)
+
+            temp_tokens = obj.set_if_not_none('tokens', obj.tokens)
+            obj.tokens = []
+            if temp_tokens is not None:
+                obj.tokens.extend(
+                    PyTfToken(token_dict['name'], token_dict['num_instances'])
+                    for token_dict in temp_tokens
+                )
+                for tok in obj.tokens:
+                    obj.tokens_by_name[tok.name] = tok
 
             return obj
         except tomlkit.exceptions.UnexpectedCharError as e:
