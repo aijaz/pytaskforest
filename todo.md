@@ -21,9 +21,9 @@
 - [ ] Script support
 - [ ] Tokens
 - [x] Mark
-- [ ] Hold
-- [ ] Release Hold
-- [ ] Release Dependencies
+- [x] Hold
+- [x] Release Hold
+- [x] Release Dependencies
 - [ ] Rerun
 
 

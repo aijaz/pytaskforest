@@ -767,6 +767,18 @@ def create_job_done_file(d, fn, jn, tz, q, w, st, ec):
     return file_name
 
 
+def create_job_running_file(d, fn, jn, tz, q, w, st, ec):
+    file_name = f"{fn}.{jn}.{q}.{w}.{st}.info"
+    with open(os.path.join(d, file_name), "w") as f:
+        f.write(f'family_name = "{fn}"\n')
+        f.write(f'job_name = "{jn}"\n')
+        f.write(f'tz = "{tz}"\n')
+        f.write(f'queue_name = "{q}"\n')
+        f.write(f'worker_name = "{w}"\n')
+        f.write('start_time = "{st}"\n')
+    return file_name
+
+
 def test_all_ready_jobs_modified_as_jobs_complete(two_cal_config_chicago, tmp_path):
     fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
     create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
@@ -1314,7 +1326,7 @@ def test_multiple_hold_remove(two_cal_config_chicago, tmp_path):
     create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
     create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
 
-    status_json = status(two_cal_config_chicago) # to create the dirs
+    _ = status(two_cal_config_chicago) # to create the dirs
     hold(two_cal_config_chicago, 'F1', 'J6')
     hold(two_cal_config_chicago, 'F1', 'J6')
     hold(two_cal_config_chicago, 'F1', 'J6')
@@ -1362,3 +1374,58 @@ def test_release_deps(two_cal_config_chicago, tmp_path):
         'Success', 'Success', 'Success',
     ]
 
+
+def test_release_deps_after_run(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    release_dependencies(two_cal_config_chicago, 'F1', 'J1')  # normally should wait until 3:30
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Ready', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    create_job_done_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Success', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+
+
+def test_release_deps_after_running(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    release_dependencies(two_cal_config_chicago, 'F1', 'J1')  # normally should wait until 3:30
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Ready', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    create_job_running_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Running', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
