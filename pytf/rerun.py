@@ -1,9 +1,12 @@
 import os
+import pathlib
 import re
-import shutil
+
+import tomlkit
 
 from .config import Config
 from .holdAndRelease import release_dependencies
+
 
 def rerun(config:Config, family, job):
     """
@@ -20,17 +23,23 @@ def rerun(config:Config, family, job):
     all_info_files = [fn for fn in all_files
                       if fn.startswith(f"{family}.{job}.")]
     next_info_number = 1
-    r = re.compile(r'\.Orig-(\d+)\.info')
+    r = re.compile(r'-Orig-(\d+)\.')
     existing_info_numbers = [int(re.findall(r, fn)[0]) for fn in all_info_files if re.findall(r, fn)]
     if existing_info_numbers:
         next_info_number = max(existing_info_numbers) + 1
 
     file_to_rename = [f for f in all_info_files if not re.findall(r, f)]
     if file_to_rename:
+        new_job_name = f'{job}-Orig-{next_info_number}'
         l = file_to_rename[0].split(".")
-        l[-1] = f"Orig[{next_info_number}.info"
+        l[1] = new_job_name
         new_file_name = ".".join(l)
-        os.rename(os.path.join(config.todays_log_dir, file_to_rename[0]),
-                  os.path.join(config.todays_log_dir, new_file_name))
+        # change the job name to be the new job name
+        job_info_str = pathlib.Path(os.path.join(config.todays_log_dir, file_to_rename[0])).read_text()
+        job_info = tomlkit.loads(job_info_str)
+        job_info['job_name'] = new_job_name
+        os.remove(os.path.join(config.todays_log_dir, file_to_rename[0]))
+        with open(os.path.join(config.todays_log_dir, new_file_name), "w") as f:
+            f.write(tomlkit.dumps(job_info))
 
         release_dependencies(config, family, job)

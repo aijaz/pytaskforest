@@ -18,6 +18,7 @@ from pytf.config import Config
 from pytf.status import status
 from pytf.mark import mark
 from pytf.holdAndRelease import (hold, remove_hold, release_dependencies)
+from pytf.rerun import rerun
 
 
 @pytest.fixture
@@ -762,7 +763,7 @@ def create_job_done_file(d, fn, jn, tz, q, w, st, ec):
         f.write(f'tz = "{tz}"\n')
         f.write(f'queue_name = "{q}"\n')
         f.write(f'worker_name = "{w}"\n')
-        f.write('start_time = "{st}"\n')
+        f.write(f'start_time = "{st}"\n')
         f.write(f'error_code = {ec}\n')
     return file_name
 
@@ -1429,3 +1430,40 @@ def test_release_deps_after_running(two_cal_config_chicago, tmp_path):
         'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
         'Success', 'Success', 'Success',
     ]
+
+
+def test_mark_success_to_failure_then_rerun(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    status_json = status(two_cal_config_chicago)  # needed to create required dirs
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Waiting',
+        'Ready', 'Ready', 'Ready',
+    ]
+    _ = create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 23, 'America/Chicago')
+    mark(two_cal_config_chicago, 'F2', 'JA', 1)
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Waiting',
+        'Failure', 'Ready', 'Ready',
+    ]
+    rerun(two_cal_config_chicago, 'F2', 'JA')
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Waiting',
+        'Ready', 'Ready', 'Ready',
+    ]
+
+
+def test_mark_success_to_failure_then_rerun_files(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    _ = status(two_cal_config_chicago)  # needed to create required dirs
+    _ = create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 23, 'America/Chicago')
+    mark(two_cal_config_chicago, 'F2', 'JA', 1)
+    rerun(two_cal_config_chicago, 'F2', 'JA')
+    files = os.listdir(two_cal_config_chicago.todays_log_dir)
+    assert files == ['F2.JA.release', 'F2.JA-Orig-1.q.w.20240601010203.info']
