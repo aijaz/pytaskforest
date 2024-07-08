@@ -18,7 +18,8 @@ def run(todays_log_dir: str,
         job_name: str,
         job_tz: str,
         job_queue_name: str,
-        job_log_file: str):
+        job_log_file: str,
+        info_path: str):
     run_logger = logging.getLogger('run_logger')
     run_logger.setLevel(logging.INFO)
     handler = logging.FileHandler(filename=job_log_file)
@@ -31,11 +32,7 @@ def run(todays_log_dir: str,
 
     script_path = os.path.join(job_dir, job_name)
     run_logger.info(f"Run Logger: Worker gonna run job {family_name}::{job_name}: {script_path}")
-    now = time_zoned_now(primary_tz)
-    start_small = now.strftime("%Y%m%d%H%M%S")
     start_pretty = time_zoned_now().astimezone(pytz.timezone(job_tz)).strftime("%Y/%m/%d %H:%M:%S")
-    info_path = os.path.join(todays_log_dir,
-                             f"{family_name}.{job_name}.{job_queue_name}.x.{start_small}.info")
 
     if os.path.exists(info_path):
         run_logger.warning(f"Not writing to info file {info_path} because the file already exists")

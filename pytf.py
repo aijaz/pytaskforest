@@ -25,6 +25,7 @@ from pytf.holdAndRelease import release_dependencies as pytf_release_dependencie
 from pytf.pytf_logging import get_logging_config
 from pytf.status import status as pytf_status
 from pytf.mockdatetime import MockDateTime
+from pytf.pytftoken import PyTfToken
 
 
 @click.group()
@@ -79,6 +80,11 @@ def pytf(context,
         raise PyTaskforestParseException(MSG_CONFIG_MISSING_INSTRUCTIONS_DIR)
     setup_logging(config.log_dir)
 
+    # before doing anything, make sure token file is up-to-date
+    # This is important because a rerun may move an info file and cause a token file to point to
+    # a non-existent file
+    PyTfToken.update_token_usage(config)
+
 
 def coalesce(d1, d2, root_d):
     if d1 is not None:
@@ -104,6 +110,7 @@ def main(context):
 @click.option("--collapse", is_flag=True, show_default=True, default=True, help="Collapse Repeating Jobs")
 @click.pass_context
 def status(context, json, collapse):
+    # TODO: Implement collapse functionality: LOW PRIORITY
     def coalesce(r, k):
         return len(r.get(k)) if r.get(k) is not None else 0
 
@@ -155,10 +162,6 @@ def status(context, json, collapse):
         for possibly_none in ('start_time', 'error_code'):
             rec[possibly_none] = "" if rec[possibly_none] is None else rec[possibly_none]
         print(format_string.format(**rec))
-
-
-
-
 
 
 @pytf.command()

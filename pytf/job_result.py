@@ -15,6 +15,7 @@ class JobResult:
     worker_name: str | None = field(default=None)
     start_time: datetime.datetime | None = field(default=None)
     error_code: int | None = field(default=None)
+    tokens: [str] = field(default=[])
 
     
 def serializer(_, field, value):

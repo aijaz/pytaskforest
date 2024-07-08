@@ -9,6 +9,7 @@ from .mockdatetime import MockDateTime, MockSleep
 from .runner import prepare_required_dirs, run_shell_script
 from .pytf_worker import run_task
 from .status import status_and_families
+from .pytftoken import PyTfToken
 import pytf.dirs as dirs
 
 
@@ -83,12 +84,26 @@ def main_function(config: Config):
             with open(info_path, "a") as f:
                 f.write(f'error_code = {err}\n')
         else:
+            now = MockDateTime.now(config.primary_tz)
+            start_small = now.strftime("%Y%m%d%H%M%S")
+            info_path = os.path.join(config.todays_log_dir,
+                                     f"{job['family_name']}.{job['job_name']}.{job['queue_name']}.x.{start_small}.info")
+            tokens_needed = job['tokens']
+
+            logger.info(f"Checking for tokens {tokens_needed} for job: {job['family_name']}::{job['job_name']}")
+
+            tokens_available = PyTfToken.consume_token(config, tokens_needed, info_path)
+            if not tokens_available:
+                logger.warning(f"Not queing job {job['family_name']}::{job['job_name']} - waiting on tokens")
+
             logger.info(f"Queuing job {job['family_name']}::{job['job_name']} on queue: {job['queue_name']}")
             run_task.apply_async(args=[config.todays_log_dir,
-                           config.job_dir,
-                           config.primary_tz,
-                           job['family_name'],
-                           job['job_name'],
-                           job['tz'],
-                           job['queue_name'],
-                           job_log_file], queue=job['queue_name'])
+                                       config.job_dir,
+                                       config.primary_tz,
+                                       job['family_name'],
+                                       job['job_name'],
+                                       job['tz'],
+                                       job['queue_name'],
+                                       job_log_file,
+                                       info_path],
+                                 queue=job['queue_name'])

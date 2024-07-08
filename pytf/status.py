@@ -80,7 +80,8 @@ def _get_job_status(family, job_name, logged_jobs_dict, held_jobs, released_jobs
                                    job_name,
                                    job_status,
                                    job_queue,
-                                   job_tz)
+                                   job_tz,
+                                   tokens=family.jobs_by_name[job_name].tokens)
         # noinspection PyTypeChecker
         job_result_dict = asdict(the_job_result, value_serializer=serializer)
 

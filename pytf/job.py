@@ -22,7 +22,7 @@ class Job:
     until_hr: int | None = field(default=None)
     until_min: int | None = field(default=None)
     chained: bool | None = field(default=None)
-    tokens: list[str] | None = field(default=None)
+    tokens: list[str] | None = field(default=[])
     num_retries: int | None = field(default=None)
     retry_sleep_min: int | None = field(default=None)
     queue: str | None = field(default="default")
