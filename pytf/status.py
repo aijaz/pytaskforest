@@ -73,12 +73,12 @@ def _get_job_status(family, job_name, logged_jobs_dict, held_jobs, released_jobs
         released = bool(
             released_jobs.get(family_name) and released_jobs[family_name].get(job_name)
         )
+        job_status = JobStatus.READY if released else JobStatus.HOLD if held else JobStatus.WAITING if unmet else JobStatus.READY
+        # TODO: Some of the ready jobs may need to be changed to TOKEN_HOLD if the job is waiting on Tokens
+
         the_job_result = JobResult(family_name,
                                    job_name,
-                                   JobStatus.READY if released
-                                   else JobStatus.HOLD if held
-                                   else JobStatus.WAITING if unmet
-                                   else JobStatus.READY,
+                                   job_status,
                                    job_queue,
                                    job_tz)
         # noinspection PyTypeChecker

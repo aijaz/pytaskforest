@@ -14,6 +14,7 @@ def rerun(config:Config, family, job):
     - Move the old info file to *.Orig-$n.info
     - Release all dependencies on that job
         - This should cause that job to be eligible for the next run
+        - A job should not be rerun if it's still running
     :param config:
     :param family:
     :param job:
@@ -37,6 +38,9 @@ def rerun(config:Config, family, job):
         # change the job name to be the new job name
         job_info_str = pathlib.Path(os.path.join(config.todays_log_dir, file_to_rename[0])).read_text()
         job_info = tomlkit.loads(job_info_str)
+        if job_info.get('error_code') is None:
+            # don't rerun if the job is still running
+            return
         job_info['job_name'] = new_job_name
         os.remove(os.path.join(config.todays_log_dir, file_to_rename[0]))
         with open(os.path.join(config.todays_log_dir, new_file_name), "w") as f:

@@ -1493,6 +1493,35 @@ def test_mark_success_to_failure_then_rerun_files(two_cal_config_chicago, tmp_pa
     assert files == ['F2.JA.release', 'F2.JA-Orig-1.q.w.20240601010203.info']
 
 
+def test_rerun_while_running(two_cal_config_chicago, tmp_path):
+    fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
+    create_job_done_file(todays_log_dir, 'F2', 'JA', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    release_dependencies(two_cal_config_chicago, 'F1', 'J1')  # normally should wait until 3:30
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Ready', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+    create_job_running_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    rerun(two_cal_config_chicago, 'F1', 'J1')
+    status_json = status(two_cal_config_chicago)
+    assert [j['status'] for j in status_json['status']['flat_list']] == [
+        'Running', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
+        'Success', 'Success', 'Success',
+    ]
+
+
 def prep_token_family(tmp_path, config, family_str):
     MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
     config.log_dir = os.path.join(tmp_path, 'log_dir')
