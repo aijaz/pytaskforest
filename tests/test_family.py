@@ -15,11 +15,12 @@ from pytf.pytf_calendar import Calendar
 from pytf.job import Job
 from pytf.mockdatetime import MockDateTime
 from pytf.config import Config
-from pytf.status import status
+from pytf.status import status, status_and_families_and_token_doc
 from pytf.mark import mark
 from pytf.holdAndRelease import (hold, remove_hold, release_dependencies)
 from pytf.rerun import rerun
 from pytf.pytftoken import PyTfToken
+from pytf.runner import prepare_required_dirs
 
 
 @pytest.fixture
@@ -792,7 +793,7 @@ def create_job_done_file(d, fn, jn, tz, q, w, st, ec):
     return file_name
 
 
-def create_job_running_file(d, fn, jn, tz, q, w, st, ec):
+def create_job_running_file(d, fn, jn, tz, q, w, st):
     file_name = f"{fn}.{jn}.{q}.{w}.{st}.info"
     with open(os.path.join(d, file_name), "w") as f:
         f.write(f'family_name = "{fn}"\n')
@@ -1394,7 +1395,7 @@ def test_release_deps(two_cal_config_chicago, tmp_path):
     release_dependencies(two_cal_config_chicago, 'F1', 'J1')  # normally should wait until 3:30
     status_json = status(two_cal_config_chicago)
     assert [j['status'] for j in status_json['status']['flat_list']] == [
-        'Ready', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Released', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
         'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
         'Success', 'Success', 'Success',
     ]
@@ -1415,7 +1416,7 @@ def test_release_deps_after_run(two_cal_config_chicago, tmp_path):
     release_dependencies(two_cal_config_chicago, 'F1', 'J1')  # normally should wait until 3:30
     status_json = status(two_cal_config_chicago)
     assert [j['status'] for j in status_json['status']['flat_list']] == [
-        'Ready', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Released', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
         'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
         'Success', 'Success', 'Success',
     ]
@@ -1443,11 +1444,11 @@ def test_release_deps_after_running(two_cal_config_chicago, tmp_path):
     release_dependencies(two_cal_config_chicago, 'F1', 'J1')  # normally should wait until 3:30
     status_json = status(two_cal_config_chicago)
     assert [j['status'] for j in status_json['status']['flat_list']] == [
-        'Ready', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Released', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
         'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
         'Success', 'Success', 'Success',
     ]
-    create_job_running_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_running_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203')
     status_json = status(two_cal_config_chicago)
     assert [j['status'] for j in status_json['status']['flat_list']] == [
         'Running', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
@@ -1478,7 +1479,7 @@ def test_mark_success_to_failure_then_rerun(two_cal_config_chicago, tmp_path):
     assert [j['status'] for j in status_json['status']['flat_list']] == [
         'Waiting', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
         'Ready', 'Ready', 'Ready', 'Ready', 'Waiting',
-        'Ready', 'Ready', 'Ready',
+        'Released', 'Ready', 'Ready',
     ]
 
 
@@ -1508,11 +1509,11 @@ def test_rerun_while_running(two_cal_config_chicago, tmp_path):
     release_dependencies(two_cal_config_chicago, 'F1', 'J1')  # normally should wait until 3:30
     status_json = status(two_cal_config_chicago)
     assert [j['status'] for j in status_json['status']['flat_list']] == [
-        'Ready', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
+        'Released', 'Waiting', 'Waiting', 'Waiting', 'Waiting',
         'Ready', 'Ready', 'Ready', 'Ready', 'Ready',
         'Success', 'Success', 'Success',
     ]
-    create_job_running_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203', 0)
+    create_job_running_file(todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203')
     rerun(two_cal_config_chicago, 'F1', 'J1')
     status_json = status(two_cal_config_chicago)
     assert [j['status'] for j in status_json['status']['flat_list']] == [
@@ -1526,14 +1527,12 @@ def prep_token_family(tmp_path, config, family_str):
     MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Chicago')
     config.log_dir = os.path.join(tmp_path, 'log_dir')
     config.family_dir = os.path.join(tmp_path, 'family_dir')
-    dated_family_dir = dirs.dated_subdir(config.family_dir, MockDateTime.now(tz="America/Chicago"))
-    dirs.make_dir(dated_family_dir)
-    with open(os.path.join(dated_family_dir, "F1"), "w") as f:
+    prepare_required_dirs(config)
+    # dated_family_dir = dirs.dated_subdir(config.family_dir, MockDateTime.now(tz="America/Chicago"))
+    # dirs.make_dir(dated_family_dir)
+    with open(os.path.join(config.todays_family_dir, "F1"), "w") as f:
         f.write(family_str)
-    todays_log_dir = dirs.todays_log_dir(config)
-    dirs.make_dir(todays_log_dir)
-    fam = Family.parse("F1", family_str, config)
-    return fam, todays_log_dir
+    return Family.parse("F1", family_str, config)
 
 
 def test_token_in_job(one_token_config, tmp_path):
@@ -1541,7 +1540,7 @@ def test_token_in_job(one_token_config, tmp_path):
 
     J1(tokens=["T1"])
     """
-    fam, todays_log_dir = prep_token_family(tmp_path, one_token_config, family_str)
+    fam = prep_token_family(tmp_path, one_token_config, family_str)
     ready_job_names = fam.names_of_all_ready_jobs()
     assert ready_job_names == ["J1"]
 
@@ -1559,7 +1558,7 @@ def test_two_tokens_in_job(two_token_config, tmp_path):
 
     J1(tokens=["T2", "T3"])
     """
-    fam, todays_log_dir = prep_token_family(tmp_path, two_token_config, family_str)
+    fam = prep_token_family(tmp_path, two_token_config, family_str)
 
     j:Job = fam.jobs_by_name['J1']
     t:[str] = j.tokens
@@ -1571,4 +1570,36 @@ def test_two_tokens_in_job(two_token_config, tmp_path):
     tok3:PyTfToken = two_token_config.tokens_by_name['T3']
     assert tok3.name == 'T3'
     assert tok3.num_instances == 3
+
+
+def test_token_consumption_single_000(one_token_config, tmp_path):
+    cfg = one_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+    J1(tokens=["T1"])
+    """
+    fam = prep_token_family(tmp_path, cfg, family_str)
+
+    PyTfToken.update_token_usage(cfg)
+    status_json = status(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
+
+
+def test_token_consumption_single_010(one_token_config, tmp_path):
+    cfg = one_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+    J1(tokens=["T1"])    J2(tokens=["T1"])
+    """
+    fam = prep_token_family(tmp_path, cfg, family_str)
+
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert new_token_doc is not None
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready', 'Token Wait']
+    PyTfToken.save_token_document(cfg, new_token_doc)
+    create_job_running_file(cfg.todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203')
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Running', 'Token Wait']
+
+
+
 

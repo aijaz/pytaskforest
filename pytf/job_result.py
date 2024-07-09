@@ -23,4 +23,6 @@ def serializer(_, field, value):
         return value.isoformat()
     elif isinstance(value, JobStatus):
         return value.value
+    elif isinstance(value, list):
+        return list(value)
     return value

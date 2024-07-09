@@ -21,5 +21,3 @@ from pytf.holdAndRelease import (hold, remove_hold, release_dependencies)
 from pytf.rerun import rerun
 from pytf.pytftoken import PyTfToken
 
-def test_consume_token():
-    assert False

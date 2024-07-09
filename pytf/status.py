@@ -1,6 +1,7 @@
 import datetime
 import os.path
 
+import tomlkit
 from attrs import asdict
 
 from .config import Config
@@ -11,14 +12,20 @@ from .job_status import JobStatus
 from .logs import get_logged_job_results, get_held_jobs, get_released_jobs
 from .mockdatetime import MockDateTime
 from .runner import prepare_required_dirs
+from .pytftoken import PyTfToken
 
 
 def status(config: Config, dt: datetime.datetime = None):
-    status, _ = _status_helper(config, dt)
+    status, _, _ = _status_helper(config, dt)
     return status
 
 
-def status_and_families(config: Config, dt: datetime.datetime = None):
+def status_with_token_doc(config: Config, dt: datetime.datetime = None):
+    status, _, new_token_doc = _status_helper(config, dt)
+    return status, new_token_doc
+
+
+def status_and_families_and_token_doc(config: Config, dt: datetime.datetime = None):
     return _status_helper(config, dt)
 
 
@@ -29,18 +36,30 @@ def _status_helper(config: Config, dt: datetime.datetime = None):
     result = {"status": {"flat_list": [], "family": {}}}
 
     prepare_required_dirs(config)
+    new_token_doc = tomlkit.TOMLDocument()
 
     # To see what's run, don't consult families. Things might have changed.
     # Look at the log dir
     log_dir_to_examine = dirs.dated_subdir(config.log_dir, dt)
     if not os.path.exists(log_dir_to_examine):
-        return result, []
+        return result, [], new_token_doc
 
     families = get_families_from_dir(config.todays_family_dir, config)
 
     _get_status(config, families, log_dir_to_examine, result)
 
-    return result, families
+    # convert ready to token wait if necessary
+    token_doc = PyTfToken.current_token_document(config)
+    for job_result_dict in result['status']['flat_list']:
+        if job_result_dict['status'] == 'Ready':
+            if tokens := job_result_dict['tokens']:
+                new_token_doc = PyTfToken.consume_tokens_from_doc(config, tokens, token_doc, job_result_dict['family_name'], job_result_dict['job_name'])
+                if new_token_doc is not None:
+                    token_doc = new_token_doc
+                else:
+                    job_result_dict['status'] = 'Token Wait'
+
+    return result, families, token_doc
 
 
 def _get_status(config, families, log_dir, result):
@@ -73,8 +92,8 @@ def _get_job_status(family, job_name, logged_jobs_dict, held_jobs, released_jobs
         released = bool(
             released_jobs.get(family_name) and released_jobs[family_name].get(job_name)
         )
-        job_status = JobStatus.READY if released else JobStatus.HOLD if held else JobStatus.WAITING if unmet else JobStatus.READY
-        # TODO: Some of the ready jobs may need to be changed to TOKEN_HOLD if the job is waiting on Tokens
+
+        job_status = JobStatus.RELEASED if released else JobStatus.HOLD if held else JobStatus.WAITING if unmet else JobStatus.READY
 
         the_job_result = JobResult(family_name,
                                    job_name,
