@@ -32,6 +32,7 @@ def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run)
     logger = logging.getLogger('pytf_logger')
     sleep_time = 10
     while True:
+        logger.info("Entering main PyTF Loop")
         # primary_tz is used for the start and end time of the main loop
         now: datetime.datetime = MockDateTime.now(config.primary_tz)
         todays_family_dir = dirs.dated_dir(os.path.join(config.family_dir, "{YYYY}{MM}{DD}"), now)
@@ -40,6 +41,10 @@ def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run)
             break
 
         function_to_run(config)  # Assume this takes less than a minute to run
+
+        if config.once_only:
+            logger.info("Once_only is set. Exiting loop now.")
+
         now: datetime.datetime = MockDateTime.now(tz=config.primary_tz)
         sleep_time_left = sleep_time - (now.second % sleep_time)
         logger.info(f"Sleeping for {sleep_time_left}")
@@ -73,6 +78,14 @@ def main_function(config: Config):
 
             info_path = os.path.join(config.todays_log_dir,
                                      f"{job['family_name']}.{job['job_name']}.{job['queue_name']}.x.{start_small}.info")
+
+            if tokens_needed := job['tokens']:
+                logger.info(f"Checking for tokens {tokens_needed} for job: {job['family_name']}::{job['job_name']}")
+                tokens_available = PyTfToken.consume_token(config, tokens_needed, info_path)
+                if not tokens_available:
+                    logger.warning(f"Not queuing job {job['family_name']}::{job['job_name']} - waiting on tokens")
+                    continue
+
             with open(info_path, "w") as f:
                 f.write(f'family_name = "{job['family_name']}"\n')
                 f.write(f'job_name = "{job['job_name']}"\n')
@@ -88,13 +101,13 @@ def main_function(config: Config):
             start_small = now.strftime("%Y%m%d%H%M%S")
             info_path = os.path.join(config.todays_log_dir,
                                      f"{job['family_name']}.{job['job_name']}.{job['queue_name']}.x.{start_small}.info")
-            tokens_needed = job['tokens']
 
-            logger.info(f"Checking for tokens {tokens_needed} for job: {job['family_name']}::{job['job_name']}")
-
-            tokens_available = PyTfToken.consume_token(config, tokens_needed, info_path)
-            if not tokens_available:
-                logger.warning(f"Not queing job {job['family_name']}::{job['job_name']} - waiting on tokens")
+            if tokens_needed := job['tokens']:
+                logger.info(f"Checking for tokens {tokens_needed} for job: {job['family_name']}::{job['job_name']}")
+                tokens_available = PyTfToken.consume_token(config, tokens_needed, info_path)
+                if not tokens_available:
+                    logger.warning(f"Not queuing job {job['family_name']}::{job['job_name']} - waiting on tokens")
+                    continue
 
             logger.info(f"Queuing job {job['family_name']}::{job['job_name']} on queue: {job['queue_name']}")
             run_task.apply_async(args=[config.todays_log_dir,

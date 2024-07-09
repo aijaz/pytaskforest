@@ -61,7 +61,8 @@ def run_task(todays_log_dir: str,
              job_name: str,
              job_tz: str,
              job_queue_name: str,
-             job_log_file: str):
+             job_log_file: str,
+             job_info_file: str):
     run(todays_log_dir,
         job_dir,
         primary_tz,
@@ -69,7 +70,8 @@ def run_task(todays_log_dir: str,
         job_name,
         job_tz,
         job_queue_name,
-        job_log_file)
+        job_log_file,
+        job_info_file)
 
 
 def time_zoned_now(tz: str = "UTC") -> datetime:

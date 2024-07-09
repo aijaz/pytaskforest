@@ -61,7 +61,7 @@ class PyTfToken:
         current_usage:[str,int] = {}
         token_usage_doc = tomlkit.loads(pathlib.Path(token_file).read_text())
 
-        for token in token_usage_doc['token']:
+        for token in token_usage_doc.get('token', []):
             token_name_in_usage = token['token_name']
             current_usage[token_name_in_usage] = current_usage.get(token_name_in_usage, 0) + 1
 
