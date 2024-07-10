@@ -1714,10 +1714,15 @@ def prep_end_to_end(tmp_path, config, families):
             echo "Done"
             """)
         os.chmod(file_path, 0o755)
-    setup_logging_and_tokens(config)
 
 
-def test_token_main(one_token_config, tmp_path):
+def run_main(cfg):
+    setup_logging_and_tokens(cfg)
+    main(cfg)
+
+
+def test_token_end_to_end_simple(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
     cfg = one_token_config
     family_str = """start="0000", queue="main", email="a@b.c"
 J0_1()
@@ -1725,6 +1730,39 @@ J0_2()
     """
     prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": family_str}])
     print(f"{cfg.log_dir=}")
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready', 'Waiting']
     assert cfg.once_only
     assert cfg.run_local
-    main(cfg)
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Ready']
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Success']
+
+
+def test_token_end_to_end_complex(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="0000", queue="main", email="a@b.c"
+    J0_1(tokens=["T1"])
+    """
+    f2_str = """start="0000", queue="main", email="a@b.c"
+    J0_2(tokens=["T1"])
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str}, {"name": 'F2', "str": f2_str}])
+    print(f"{cfg.log_dir=}")
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready', 'Token Wait']
+    assert cfg.once_only
+    assert cfg.run_local
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Token Wait']
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Ready']
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Success']

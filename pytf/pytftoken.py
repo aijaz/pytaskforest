@@ -87,11 +87,9 @@ class PyTfToken:
             current_token_usage[token_name_in_usage] = current_token_usage.get(token_name_in_usage, 0) + 1
             t = tomlkit.table()
             t['token_name'] = token_name_in_usage
-            t['info_file_path'] = ''
             t['family_name'] = family_name
             t['job_name'] = job_name
             new_token_usage_doc['token'].append(t)
-
 
         logger.info(f"{current_token_usage=}")
 
@@ -102,7 +100,8 @@ class PyTfToken:
             if current_token_usage.get(token_name, 0) < total_num_tokens:
                 t = tomlkit.table()
                 t['token_name'] = token_name
-                t['info_file_path'] = ''
+                t['family_name'] = family_name
+                t['job_name'] = job_name
                 new_token_usage_doc['token'].append(t)
             else:
                 logger.warning(f"Couldn't find available token: {token_name}")
