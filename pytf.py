@@ -16,13 +16,12 @@ from pytf.exceptions import (PyTaskforestParseException,
                              MSG_CONFIG_MISSING_FAMILY_DIR,
                              MSG_CONFIG_MISSING_JOB_DIR,
                              )
-from pytf.main import main as pytf_main
+from pytf.main import main as pytf_main, setup_logging_and_tokens
 from pytf.rerun import rerun as pytf_rerun
 from pytf.mark import mark as pytf_mark
 from pytf.holdAndRelease import hold as pytf_hold
 from pytf.holdAndRelease import remove_hold as pytf_remove_hold
 from pytf.holdAndRelease import release_dependencies as pytf_release_dependencies
-from pytf.pytf_logging import get_logging_config
 from pytf.status import status as pytf_status
 from pytf.mockdatetime import MockDateTime
 from pytf.pytftoken import PyTfToken
@@ -78,13 +77,7 @@ def pytf(context,
         raise PyTaskforestParseException(MSG_CONFIG_MISSING_JOB_DIR)
     if config.instructions_dir is None:
         raise PyTaskforestParseException(MSG_CONFIG_MISSING_INSTRUCTIONS_DIR)
-    setup_logging(config.log_dir)
-
-    # before doing anything, make sure token file is up-to-date
-    # This is important because a rerun may move an info file and cause a token file to point to
-    # a non-existent file
-    PyTfToken.update_token_usage(config)
-
+    setup_logging_and_tokens(config)
 
 def coalesce(d1, d2, root_d):
     if d1 is not None:
@@ -208,12 +201,6 @@ def remove_hold(context, family, job):
 def release_dependencies(context, family, job):
     config = context.obj['config']
     pytf_release_dependencies(config, family, job)
-
-
-def setup_logging(log_dir: str):
-    logging_dict = get_logging_config(log_dir)
-    logging.config.dictConfig(logging_dict)
-    # _ = logging.getLogger('runner')
 
 
 if __name__ == '__main__':

@@ -1,13 +1,19 @@
+import logging
 import os
-import time
+
+
+def setup_logging(log_dir: str):
+    logging_dict = get_logging_config(log_dir)
+    logging.config.dictConfig(logging_dict)
+    # _ = logging.getLogger('runner')
 
 
 def get_logging_config(log_dir: str):
 
-    if not os.path.exists("/pytf_root/logs/pytf.log"):
-        print("**** Creating log file")
-        open("/pytf_root/logs/pytf.log", 'a').close()  # create empty log file
-        # via https://stackoverflow.com/a/74059469
+    # if not os.path.exists("/pytf_root/logs/pytf.log"):
+    #     print("**** Creating log file")
+    #     open("/pytf_root/logs/pytf.log", 'a').close()  # create empty log file
+    #     # via https://stackoverflow.com/a/74059469
 
     return {
         "version": 1,

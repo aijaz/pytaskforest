@@ -63,12 +63,10 @@ class PyTfToken:
     @staticmethod
     def save_token_document(config, doc: tomlkit.TOMLDocument):
         token_file = os.path.join(config.log_dir, "token_usage.toml")
-        print(f"Writing {doc}")
         with open(token_file, "w") as f:
             if doc is None:
                 f.write("")
             else:
-                print(f"Writing {tomlkit.dumps(doc)}")
                 f.write(tomlkit.dumps(doc))
 
     @staticmethod

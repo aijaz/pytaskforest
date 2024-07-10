@@ -21,6 +21,7 @@ from pytf.holdAndRelease import (hold, remove_hold, release_dependencies)
 from pytf.rerun import rerun
 from pytf.pytftoken import PyTfToken
 from pytf.runner import prepare_required_dirs
+from pytf.main import main, setup_logging_and_tokens
 
 
 @pytest.fixture
@@ -98,6 +99,8 @@ def daily_config():
 def two_token_config():
     return Config.from_str("""
     primary_tz = "America/Denver"
+    once_only = true
+    run_local = true
     [[tokens]]
     name="T3"
     num_instances=3
@@ -111,6 +114,8 @@ def two_token_config():
 def one_token_config():
     return Config.from_str("""
     primary_tz = "America/Denver"
+    once_only = true
+    run_local = true
     [[tokens]]
     name="T1"
     num_instances=1
@@ -231,6 +236,14 @@ def test_family_split_double_data_job_1_chained():
     line = 'J(tz = "GMT", chained=TRUE) E(tz = "America/Denver", start="0200") # foo'
     jobs = Forest.split_jobs(line, '')
     assert jobs[1].chained is None
+
+
+# def test_split_jobs_missing_paren():
+# TODO: Implement this
+# line = "J6()  J7() J8() J9() J2("
+# with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+#     jobs = Forest.split_jobs(line, '')
+# # assert str(exc_info.value) == f"{ex.MSG_FAMILY_JOB_TWICE} name::J2"
 
 
 def test_split_jobs_non_repeat():
@@ -1237,6 +1250,7 @@ def test_mark_success_to_failure(two_cal_config_chicago, tmp_path):
         'Failure', 'Ready', 'Ready',
     ]
 
+
 def test_mark_success_to_failure_error_code(two_cal_config_chicago, tmp_path):
     fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
     _ = status(two_cal_config_chicago)  # needed to create required dirs
@@ -1289,7 +1303,8 @@ def test_mark_repeat_job(tmp_path, denver_config):
         'J1-0400',
         'J1-0430',
     ]
-    info_file = create_job_done_file(denver_config.todays_log_dir, 'F1', 'J1-0330', 'America/Denver', 'q', 'w', '20240601010203', 0)
+    info_file = create_job_done_file(denver_config.todays_log_dir, 'F1', 'J1-0330', 'America/Denver', 'q', 'w',
+                                     '20240601010203', 0)
     MockDateTime.set_mock(2024, 2, 14, 3, 31, 23, 'America/Denver')
     mark(denver_config, 'F1', 'J1-0330', 12)
     info_dict = tomlkit.loads(pathlib.Path(os.path.join(denver_config.todays_log_dir, info_file)).read_text())
@@ -1352,7 +1367,7 @@ def test_multiple_hold_remove(two_cal_config_chicago, tmp_path):
     create_job_done_file(todays_log_dir, 'F3', 'JB', 'America/Chicago', 'q', 'w', '20240601010203', 0)
     create_job_done_file(todays_log_dir, 'F4', 'JC', 'America/Chicago', 'q', 'w', '20240601010203', 0)
 
-    _ = status(two_cal_config_chicago) # to create the dirs
+    _ = status(two_cal_config_chicago)  # to create the dirs
     hold(two_cal_config_chicago, 'F1', 'J6')
     hold(two_cal_config_chicago, 'F1', 'J6')
     hold(two_cal_config_chicago, 'F1', 'J6')
@@ -1528,8 +1543,6 @@ def prep_token_family(tmp_path, config, family_str):
     config.log_dir = os.path.join(tmp_path, 'log_dir')
     config.family_dir = os.path.join(tmp_path, 'family_dir')
     prepare_required_dirs(config)
-    # dated_family_dir = dirs.dated_subdir(config.family_dir, MockDateTime.now(tz="America/Chicago"))
-    # dirs.make_dir(dated_family_dir)
     with open(os.path.join(config.todays_family_dir, "F1"), "w") as f:
         f.write(family_str)
     return Family.parse("F1", family_str, config)
@@ -1544,10 +1557,10 @@ def test_token_in_job(one_token_config, tmp_path):
     ready_job_names = fam.names_of_all_ready_jobs()
     assert ready_job_names == ["J1"]
 
-    j:Job = fam.jobs_by_name['J1']
-    t:[str] = j.tokens
-    tok_name:str = t[0]
-    tok:PyTfToken = one_token_config.tokens_by_name[tok_name]
+    j: Job = fam.jobs_by_name['J1']
+    t: [str] = j.tokens
+    tok_name: str = t[0]
+    tok: PyTfToken = one_token_config.tokens_by_name[tok_name]
     assert tok.name == 'T1'
     assert tok.num_instances == 1
 
@@ -1560,19 +1573,19 @@ def test_two_tokens_in_job(two_token_config, tmp_path):
     """
     fam = prep_token_family(tmp_path, two_token_config, family_str)
 
-    j:Job = fam.jobs_by_name['J1']
-    t:[str] = j.tokens
+    j: Job = fam.jobs_by_name['J1']
+    t: [str] = j.tokens
     assert t == ["T2", "T3"]
 
-    tok2:PyTfToken = two_token_config.tokens_by_name['T2']
+    tok2: PyTfToken = two_token_config.tokens_by_name['T2']
     assert tok2.name == 'T2'
     assert tok2.num_instances == 2
-    tok3:PyTfToken = two_token_config.tokens_by_name['T3']
+    tok3: PyTfToken = two_token_config.tokens_by_name['T3']
     assert tok3.name == 'T3'
     assert tok3.num_instances == 3
 
 
-def test_token_consumption_single_000(one_token_config, tmp_path):
+def test_token_consumption_single_token_available(one_token_config, tmp_path):
     cfg = one_token_config
     family_str = """start="0000", queue="main", email="a@b.c"
     J1(tokens=["T1"])
@@ -1584,7 +1597,7 @@ def test_token_consumption_single_000(one_token_config, tmp_path):
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
 
 
-def test_token_consumption_single_010(one_token_config, tmp_path):
+def test_token_consumption_single_token_wait_before_running_new_token_doc_created(one_token_config, tmp_path):
     cfg = one_token_config
     family_str = """start="0000", queue="main", email="a@b.c"
     J1(tokens=["T1"])    J2(tokens=["T1"])
@@ -1594,12 +1607,124 @@ def test_token_consumption_single_010(one_token_config, tmp_path):
     PyTfToken.update_token_usage(cfg)
     status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
     assert new_token_doc is not None
+
+
+def test_token_consumption_single_token_wait_before_running_status(one_token_config, tmp_path):
+    cfg = one_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+    J1(tokens=["T1"])    J2(tokens=["T1"])
+    """
+    fam = prep_token_family(tmp_path, cfg, family_str)
+
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready', 'Token Wait']
+
+
+def test_token_consumption_single_token_wait_after_running(one_token_config, tmp_path):
+    cfg = one_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+    J1(tokens=["T1"])    J2(tokens=["T1"])
+    """
+    fam = prep_token_family(tmp_path, cfg, family_str)
+
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
     PyTfToken.save_token_document(cfg, new_token_doc)
     create_job_running_file(cfg.todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203')
     status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Running', 'Token Wait']
 
 
+def test_token_consumption_two_token_available(two_token_config, tmp_path):
+    cfg = two_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+    J1(tokens=["T2"]) J3(tokens=["T2"]
+    """
+    fam = prep_token_family(tmp_path, cfg, family_str)
+
+    PyTfToken.update_token_usage(cfg)
+    status_json = status(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
 
 
+def test_token_consumption_two_token_wait_before_running_new_token_doc_created(two_token_config, tmp_path):
+    cfg = two_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+    J1(tokens=["T2"])    J2(tokens=["T2"]) J3(tokens=["T2"])
+    """
+    fam = prep_token_family(tmp_path, cfg, family_str)
+
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert new_token_doc is not None
+
+
+def test_token_consumption_two_token_wait_before_running_status(two_token_config, tmp_path):
+    cfg = two_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+    J1(tokens=["T2"])    J2(tokens=["T2"]) J3(tokens=["T2"])
+    """
+    fam = prep_token_family(tmp_path, cfg, family_str)
+
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready', 'Ready', 'Token Wait']
+
+
+def test_token_consumption_two_token_wait_after_running(two_token_config, tmp_path):
+    cfg = two_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+    J1(tokens=["T2"])    J2(tokens=["T2"]) J3(tokens=["T2"])
+    """
+    fam = prep_token_family(tmp_path, cfg, family_str)
+
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    PyTfToken.save_token_document(cfg, new_token_doc)
+    create_job_running_file(cfg.todays_log_dir, 'F1', 'J1', 'America/Chicago', 'q', 'w', '20240601010203')
+    create_job_running_file(cfg.todays_log_dir, 'F1', 'J2', 'America/Chicago', 'q', 'w', '20240601010203')
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Running', 'Running', 'Token Wait']
+
+
+def prep_end_to_end(tmp_path, config, families):
+    MockDateTime.set_mock(2024, 2, 14, 2, 14, 0, 'America/Denver')
+    config.log_dir = os.path.join(tmp_path, 'log_dir')
+    config.family_dir = os.path.join(tmp_path, 'family_dir')
+    prepare_required_dirs(config)
+    for family in families:
+        with open(os.path.join(config.todays_family_dir, family['name']), "w") as f:
+            f.write(family['str'])
+    config.job_dir = os.path.join(tmp_path, 'job_dir')
+    dirs.make_dir_if_necessary(config.job_dir)
+    for sleep_time, idx in [
+        (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8),
+        (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8),
+        (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8),
+        (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8),
+    ]:
+        file_path = os.path.join(config.job_dir, f"J{sleep_time}_{idx}")
+        with open(file_path, "w") as fp:
+            fp.write(f"""#!/bin/bash
+            
+            echo "Job: J{sleep_time}_{idx}"
+            echo "Sleeping for {sleep_time}"
+            sleep {sleep_time}
+            echo "Done"
+            """)
+        os.chmod(file_path, 0o755)
+    setup_logging_and_tokens(config)
+
+
+def test_token_main(one_token_config, tmp_path):
+    cfg = one_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+J0_1()
+J0_2()
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": family_str}])
+    print(f"{cfg.log_dir=}")
+    assert cfg.once_only
+    assert cfg.run_local
+    main(cfg)

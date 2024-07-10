@@ -10,7 +10,17 @@ from .runner import prepare_required_dirs, run_shell_script
 from .pytf_worker import run_task
 from .status import status_and_families_and_token_doc
 from .pytftoken import PyTfToken
+from .pytf_logging import setup_logging
 import pytf.dirs as dirs
+
+
+def setup_logging_and_tokens(config):
+    setup_logging(config.log_dir)
+    _ = logging.getLogger("pytf_logger")
+    # before doing anything, make sure token file is up-to-date
+    # This is important because a rerun may move an info file and cause a token file to point to
+    # a non-existent file
+    PyTfToken.update_token_usage(config)
 
 
 def main(config: Config):
@@ -44,6 +54,7 @@ def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run)
 
         if config.once_only:
             logger.info("Once_only is set. Exiting loop now.")
+            break
 
         now: datetime.datetime = MockDateTime.now(tz=config.primary_tz)
         sleep_time_left = sleep_time - (now.second % sleep_time)
