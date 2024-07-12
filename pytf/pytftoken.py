@@ -26,13 +26,11 @@ class PyTfToken:
         new_token_doc:tomlkit.TOMLDocument = tomlkit.document()
         aot = None
 
-
         for token in token_usage_doc['token']:
-            # expect token name, info file
             all_info_files = os.listdir(config.todays_log_dir)
             family_name = token['family_name']
             job_name = token['job_name']
-            info_files = [f for f in all_info_files if f.startswith(f"{family_name}.{job_name}.")]
+            info_files = [f for f in all_info_files if f.startswith(f"{family_name}.{job_name}.") and f.endswith(".info")]
             if len(info_files) != 1:
                 continue
             info_file = info_files[0]
@@ -78,7 +76,7 @@ class PyTfToken:
         for name in token_names:
             if config.tokens_by_name.get(name) is None:
                 logger.error(f"Unknown Token: {name}")
-                return False
+                return None
 
         current_token_usage:[str,int] = {}
 

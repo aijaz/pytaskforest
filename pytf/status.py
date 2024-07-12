@@ -20,11 +20,6 @@ def status(config: Config, dt: datetime.datetime = None):
     return status
 
 
-def status_with_token_doc(config: Config, dt: datetime.datetime = None):
-    status, _, new_token_doc = _status_helper(config, dt)
-    return status, new_token_doc
-
-
 def status_and_families_and_token_doc(config: Config, dt: datetime.datetime = None):
     return _status_helper(config, dt)
 
