@@ -48,7 +48,7 @@ def text_files_in_dir(dir_name: str, ignore_regexes: [str]) -> [(str, str)]:
     dir_path = pathlib.Path(dir_name)
     files = [item for item in dir_path.iterdir() if item.is_file()]
     filtered = []
-    for file in files:
+    for file in sorted(files):
         matched = False
         for ignore_regex in ignore_regexes:
             regex = re.compile(ignore_regex)

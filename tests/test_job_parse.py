@@ -117,6 +117,10 @@ job_invalid_type_parameters = [
     ('queue', ('J_Job(queue=2)', "J_Job/queue (2) is type int")),
     ('queue bool', ('J_Job(queue=false)', "J_Job/queue (False) is type bool")),
     ('queue bool', ('J_Job(queue=False)', "J_Job/queue (False) is type bool")),
+    ('every bool', ('J_Job(every=False)', "J_Job/every (False) is type bool")),
+    ('no_retry_email int', ('J_Job(no_retry_email=1)', "J_Job/no_retry_email (1) is type int")),
+    ('tokens bool', ('J_Job(queue = "a", tokens=True)', "J_Job/tokens (True) is not iterable")),
+    ('tokens bool', ('J_Job(queue = "a", tokens=[1, 2])', "J_Job/tokens ([1, 2] :: 1)")),
 ]
 
 

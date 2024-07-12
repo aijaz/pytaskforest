@@ -15,15 +15,6 @@ class Dependency:
     def met(self, user_info) -> bool:
         return False
 
-    def __str__(self):
-        return ""
-
-    def __hash__(self):
-        return hash(str(self))
-
-    def __eq__(self,other):
-        return str(self) == str(other)
-
 
 @define
 class TimeDependency(Dependency):
@@ -70,10 +61,3 @@ class JobDependency(Dependency):
 
     def __eq__(self,other):
         return str(self) == str(other)
-
-
-@define
-class TokenDependency(Dependency):
-
-    def met(self, user_info) -> bool:
-        return True

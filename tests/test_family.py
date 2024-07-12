@@ -78,24 +78,6 @@ def f1_name_family_str():
 
 
 @pytest.fixture
-def monday_config():
-    return Config.from_str("""
-    calendars.mondays = [
-      "every Monday */*"
-    ]
-    """)
-
-
-@pytest.fixture
-def daily_config():
-    return Config.from_str("""
-    calendars.daily = [
-      "*/*/*"
-    ]
-    """)
-
-
-@pytest.fixture
 def two_token_config():
     return Config.from_str("""
     primary_tz = "America/Denver"
@@ -256,6 +238,96 @@ def test_split_jobs_repeat():
     line = "J6(every=900)  J7() J8() J9() J2()"
     jobs = Forest.split_jobs(line, '')
     assert [j.job_name for j in jobs] == ['J6', 'J7', 'J8', 'J9', 'J2']
+
+
+def test_days_wrong_type(two_cal_config):
+    family_str = """start="0214", days="Mon", tz = "GMT", queue="main", email="a@b.c"
+    foo
+    bar
+    baz
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("family", family_str, config=two_cal_config)
+    assert str(exc_info.value).startswith(ex.MSG_FAMILY_INVALID_TYPE)
+
+
+def test_log_dir_missing_for_ready_jobs(two_cal_config, tmp_path):
+    family_str = """start="0214", email="a@b.c"
+    foo
+    bar
+    baz
+    """
+    two_cal_config.log_dir = os.path.join(tmp_path, "logs")
+    os.makedirs(two_cal_config.log_dir)
+    fam = Family.parse("family", family_str, config=two_cal_config)
+    jobs = fam.names_of_all_ready_jobs()
+    assert jobs is None
+
+
+def test_unknown_key(two_cal_config):
+    family_str = """start="0214", que="main", email="a@b.c"
+    foo
+    bar
+    baz
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("family", family_str, config=two_cal_config)
+    assert str(exc_info.value).startswith(ex.MSG_FAMILY_UNRECOGNIZED_PARAM)
+
+
+def test_tz_wrong_type(two_cal_config):
+    family_str = """start="0214", tz = 1, queue="main", email="a@b.c"
+    foo
+    bar
+    baz
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("family", family_str, config=two_cal_config)
+    assert str(exc_info.value).startswith(ex.MSG_FAMILY_INVALID_TYPE)
+
+
+def test_no_retry_email_wrong_type(two_cal_config):
+    family_str = """start="0214", no_retry_email="False", tz = "GMT", queue="main", email="a@b.c"
+    foo
+    bar
+    baz
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("family", family_str, config=two_cal_config)
+    assert str(exc_info.value).startswith(ex.MSG_FAMILY_INVALID_TYPE)
+
+
+def test_family_first_line_fail(two_cal_config):
+    family_str = """start="0214", tz = "GMT", calendar="Tuesdays", queue="main", email="a@b.c
+    foo
+    bar
+    baz
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("family", family_str, config=two_cal_config)
+    assert str(exc_info.value).startswith(ex.MSG_FAMILY_FIRST_LINE_PARSE_FAIL)
+
+
+def test_unknown_calendar(two_cal_config):
+    family_str = """start="0214", tz = "GMT", calendar="Tuesdays", queue="main", email="a@b.c"
+    foo
+    bar
+    baz
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("family", family_str, config=two_cal_config)
+    assert str(exc_info.value) == f"{ex.MSG_FAMILY_UNKNOWN_CALENDAR} Tuesdays"
+
+
+def test_calendar_and_days_both_specified(two_cal_config):
+    family_str = """start="0214", tz = "GMT", days=["Mon", "Wed"], calendar="Tuesdays", queue="main", email="a@b.c"
+    foo
+    bar
+    baz
+    """
+    with pytest.raises(ex.PyTaskforestParseException) as exc_info:
+        _ = Family.parse("family", family_str, config=two_cal_config)
+    assert str(exc_info.value) == ex.MSG_FAMILY_CAL_AND_DAYS
 
 
 def test_family_line_one_success_cal_start_time_parse_hour(two_cal_config):
@@ -648,6 +720,25 @@ def test_external_deps(two_cal_config):
                                                     ExternalDependency('F3', 'JB'),
                                                     ExternalDependency('F4', 'JC'),
                                                     }
+
+
+def test_external_deps_by_itself(two_cal_config):
+    family_str = """start="0000"
+     F2::JA()
+    """
+    fam = Family.parse("name", family_str, two_cal_config)
+    assert len(fam.jobs_by_name) == 0
+
+
+def test_external_deps_by_itself_other_jobs(two_cal_config):
+    family_str = """start="0000"
+     F2::JA()
+     -
+     J1()
+    """
+    fam = Family.parse("name", family_str, two_cal_config)
+    assert len(fam.jobs_by_name) == 1
+    assert fam.jobs_by_name.get('J1') is not None
 
 
 def test_external_deps_tz(two_cal_config):
@@ -1223,6 +1314,20 @@ def test_repeat_in_family_by_itself(tmp_path, denver_config):
     assert fam
 
 
+def test_repeat_inherit_family_end_time(tmp_path, denver_config):
+    family_str = """start="0300", queue="main", email="a@b.c"
+    J1(start="1930", every=3600)
+    """
+    fam = Family.parse("F1", family_str, denver_config)
+    assert sorted(fam.jobs_by_name.keys()) ==  [
+        'J1-1930',
+        'J1-2030',
+        'J1-2130',
+        'J1-2230',
+        'J1-2330',
+    ]
+
+
 def test_mark_success_to_failure(two_cal_config_chicago, tmp_path):
     fam, todays_log_dir = prep_status_family(tmp_path, two_cal_config_chicago)
 
@@ -1766,3 +1871,41 @@ def test_token_end_to_end_complex(one_token_config, tmp_path):
     run_main(cfg)
     status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Success']
+
+
+def test_hold_when_release_exists(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="0000", queue="main", email="a@b.c"
+    J0_1(tokens=["T1"])
+    """
+    f2_str = """start="0000", queue="main", email="a@b.c"
+    J0_2(tokens=["T1"])
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str}, {"name": 'F2', "str": f2_str}])
+    release_dependencies(one_token_config, 'F1', 'J0_1')
+    hold(one_token_config, 'F1', 'J0_1')
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['On Hold', 'Ready']
+    files = os.listdir(one_token_config.todays_log_dir)
+    assert "F1.J0_1.hold" in files
+    assert "F1.J0_1.release" not in files
+
+
+def test_release_when_hold_exists(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="0000", queue="main", email="a@b.c"
+    J0_1(tokens=["T1"])
+    """
+    f2_str = """start="0000", queue="main", email="a@b.c"
+    J0_2(tokens=["T1"])
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str}, {"name": 'F2', "str": f2_str}])
+    hold(one_token_config, 'F1', 'J0_1')
+    release_dependencies(one_token_config, 'F1', 'J0_1')
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Released', 'Ready']
+    files = os.listdir(one_token_config.todays_log_dir)
+    assert "F1.J0_1.hold" not in files
+    assert "F1.J0_1.release"  in files

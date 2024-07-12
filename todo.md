@@ -21,7 +21,7 @@
   - [ ] Click through logs
   - [ ] Webhooks for emails
 - [ ] Script support
-- [ ] Tokens
+- [x] Tokens
 - [x] Mark
 - [x] Hold
 - [x] Release Hold

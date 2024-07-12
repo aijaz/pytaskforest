@@ -109,14 +109,18 @@ class Job:
             'tokens',
         ]
         for key in [k for k in str_lists if k in d]:
-            for i in d[key]:
-                if type(i) is not tomlkit.items.String:
-                    raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]} :: {i})")
+            try:
+                for i in d[key]:
+                    if type(i) is not tomlkit.items.String:
+                        raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]} :: {i})")
+            except TypeError as e:
+                raise ex.PyTaskforestParseException(f"{ex.MSG_INVALID_TYPE} {job_name}/{key} ({d[key]}) is not iterable") from e
+
 
     @classmethod
     def validate_bools(cls, d, job_name):
         bools = [
-            'chained',
+            'chained', # TODO: Do we need chained any more?
             'no_retry_email',
             'no_retry_success_email',
         ]

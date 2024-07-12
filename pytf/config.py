@@ -87,3 +87,5 @@ class Config():
             return obj
         except tomlkit.exceptions.UnexpectedCharError as e:
             raise ex.PyTaskforestParseException(ex.MSG_CONFIG_PARSING_FAILED) from e
+        except tomlkit.exceptions.UnexpectedEofError as e:
+            raise ex.PyTaskforestParseException(ex.MSG_CONFIG_PARSING_FAILED) from e

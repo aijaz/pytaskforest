@@ -11,6 +11,7 @@ from pytf.dirs import (
     does_dir_exist,
     list_of_files_in_dir,
     todays_log_dir,
+    text_files_in_dir,
     todays_family_dir,
 )
 from pytf.config import Config
@@ -150,3 +151,15 @@ def test_list_of_files_in_dir_sort_order(tmp_path):
     _create_9_files(tmp_path)
     files = list_of_files_in_dir(str(tmp_path))
     assert (files == sorted(files))
+
+
+def test_text_files_in_dir(tmp_path: pathlib.Path):
+    ignore_regexes = [".*\.old$", "^A"]
+    # sourcery skip: no-loop-in-tests
+    for f in ("A.txt", "b.txt", "c.txt", "c.old"):
+        with open(os.path.join(tmp_path, f), "w") as f:
+            f.write("")    
+    files = text_files_in_dir(tmp_path, ignore_regexes)
+    assert len(files) == 2
+    assert files[0][0] == "b.txt"
+    assert files[1][0] == "c.txt"

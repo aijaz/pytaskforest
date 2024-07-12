@@ -11,10 +11,6 @@ class Forest:
     jobs: [[Job | ExternalDependency]]
 
     @classmethod
-    def parse(cls, job_string: str):
-        return cls(jobs=[])
-
-    @classmethod
     def split_jobs(cls, line: str, family_name: str) -> [Job]:
         pattern = re.compile('#.*')
         line = re.sub(pattern, '', line)
