@@ -35,9 +35,7 @@ def _status_helper(config: Config, dt: datetime.datetime = None):
 
     # To see what's run, don't consult families. Things might have changed.
     # Look at the log dir
-    log_dir_to_examine = dirs.dated_subdir(config.log_dir, dt)
-    if not os.path.exists(log_dir_to_examine):
-        return result, [], new_token_doc
+    log_dir_to_examine = config.todays_log_dir
 
     families = get_families_from_dir(config.todays_family_dir, config)
 

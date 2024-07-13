@@ -1921,10 +1921,6 @@ def test_rerun_twice_files(one_token_config, tmp_path):
                      'F1.J0_1.release']
 
 
-
-
-
-
 def test_hold_when_release_exists(one_token_config, tmp_path):
     # sourcery skip: extract-duplicate-method
     cfg = one_token_config
@@ -1961,3 +1957,5 @@ def test_release_when_hold_exists(one_token_config, tmp_path):
     files = os.listdir(one_token_config.todays_log_dir)
     assert "F1.J0_1.hold" not in files
     assert "F1.J0_1.release"  in files
+
+
