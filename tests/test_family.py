@@ -98,9 +98,15 @@ def one_token_config():
     primary_tz = "America/Denver"
     once_only = true
     run_local = true
+    
+    calendars.mondays = [
+      "every Monday */*"
+    ]
+    
     [[tokens]]
     name="T1"
     num_instances=1
+    
     """)
 
 
@@ -2013,3 +2019,40 @@ F0_1()
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Failure']
 
 
+def test_end_to_end_cal_exclude(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="0000", queue="main", email="a@b.c", calendar="mondays"
+    J0_1()
+    """
+    f2_str = """start="0000", queue="main", email="a@b.c"
+    J0_2()
+    """
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 0, 'America/Denver')
+
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str},
+                                    {"name": 'F2', "str": f2_str}])
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
+    assert len(families) == 1
+    assert families[0].name == 'F2'
+
+
+def test_end_to_end_day_exclude(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="0000", queue="main", email="a@b.c", days=["Tue", "Thu", "Sat"]
+    J0_1()
+    """
+    f2_str = """start="0000", queue="main", email="a@b.c"
+    J0_2()
+    """
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 0, 'America/Denver')
+
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str},
+                                    {"name": 'F2', "str": f2_str}])
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
+    assert len(families) == 1
+    assert families[0].name == 'F2'
+    MockDateTime.reset_mock_now()

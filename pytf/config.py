@@ -72,7 +72,7 @@ class Config:
             obj.primary_tz = obj.set_if_not_none('primary_tz', obj.primary_tz)
             obj.run_local = obj.set_if_not_none('run_local', obj.run_local)
             obj.once_only = obj.set_if_not_none('once_only', obj.once_only)
-            obj.calendars = obj.set_if_not_none('calendars', obj.once_only)
+            obj.calendars = obj.set_if_not_none('calendars', obj.calendars)
 
             if temp_tokens := obj.set_if_not_none('tokens', obj.tokens):
                 obj.tokens = [

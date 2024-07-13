@@ -374,6 +374,15 @@ class Family:
 
         return result
 
+    def will_family_run_today(self) -> bool:
+        tz = self.tz or self.config.primary_tz
+        if isinstance(self.calendar_or_days, Days):
+            return MockDateTime.dow(tz) in self.calendar_or_days.days
+
+        now = MockDateTime.now(tz)
+        yyyy, mm, dd = now.year, now.month, now.day
+        return self.calendar_or_days.is_date_included(yyyy, mm, dd)
+
 
 def get_families_from_dir(family_dir: str, config: Config) -> [Family]:
     files = dirs.text_files_in_dir(family_dir, config.ignore_regex)

@@ -6,7 +6,7 @@ from attrs import asdict
 
 from .config import Config
 import pytf.dirs as dirs
-from .family import get_families_from_dir
+from .family import Family, get_families_from_dir
 from .job_result import JobResult, serializer
 from .job_status import JobStatus
 from .logs import get_logged_job_results, get_held_jobs, get_released_jobs
@@ -37,7 +37,10 @@ def _status_helper(config: Config, dt: datetime.datetime = None):
     # Look at the log dir
     log_dir_to_examine = config.todays_log_dir
 
-    families = get_families_from_dir(config.todays_family_dir, config)
+    all_families: [Family] = get_families_from_dir(config.todays_family_dir, config)
+
+    # only include families that will run today
+    families = [f for f in all_families if f.will_family_run_today()]
 
     _get_status(config, families, log_dir_to_examine, result)
 
@@ -46,7 +49,11 @@ def _status_helper(config: Config, dt: datetime.datetime = None):
     for job_result_dict in result['status']['flat_list']:
         if job_result_dict['status'] == 'Ready':
             if tokens := job_result_dict['tokens']:
-                new_token_doc = PyTfToken.consume_tokens_from_doc(config, tokens, token_doc, job_result_dict['family_name'], job_result_dict['job_name'])
+                new_token_doc = PyTfToken.consume_tokens_from_doc(config,
+                                                                  tokens,
+                                                                  token_doc,
+                                                                  job_result_dict['family_name'],
+                                                                  job_result_dict['job_name'])
                 if new_token_doc is not None:
                     token_doc = new_token_doc
                 else:

@@ -146,9 +146,6 @@ class Calendar:
             else:
                 return None
 
-
-
-
     def find_days_of_week(self, yyyy, mm, dow):
         """
         #returns an array of 4 or 5 mdays, each of which correspond to the nth dow of y/m
@@ -192,7 +189,3 @@ class Calendar:
             next_dd += 7
 
         return result
-
-
-
-
