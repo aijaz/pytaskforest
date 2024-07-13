@@ -84,55 +84,22 @@ def main_function(config: Config):
         run_logger.addHandler(handler)
         run_logger.propagate = False
 
-        if config.run_local:
-            logger.info(f"Gonna run job {job['family_name']}::{job['job_name']} locally")
-            run_logger.info(f"Run Logger: Gonna run job {job['family_name']}::{job['job_name']} locally")
-            script_path = os.path.join(config.job_dir, job['job_name'])
-            now = MockDateTime.now(config.primary_tz)
-            start_small = now.strftime("%Y%m%d%H%M%S")
-            start_pretty = MockDateTime.now().astimezone(pytz.timezone(job['tz'])).strftime("%Y/%m/%d %H:%M:%S")
+        now = MockDateTime.now(config.primary_tz)
+        start_small = now.strftime("%Y%m%d%H%M%S")
+        info_path = os.path.join(config.todays_log_dir,
+                                 f"{job['family_name']}.{job['job_name']}.{job['queue_name']}.x.{start_small}.info")
 
-            info_path = os.path.join(config.todays_log_dir,
-                                     f"{job['family_name']}.{job['job_name']}.{job['queue_name']}.x.{start_small}.info")
+        logger.info(f"Queuing job {job['family_name']}::{job['job_name']} on queue: {job['queue_name']}")
 
-            # if tokens_needed := job['tokens']:
-            #     logger.info(f"Checking for tokens {tokens_needed} for job: {job['family_name']}::{job['job_name']}")
-            #     tokens_available = PyTfToken.consume_token(config, tokens_needed, info_path)
-            #     if not tokens_available:
-            #         logger.warning(f"Not queuing job {job['family_name']}::{job['job_name']} - waiting on tokens")
-            #         continue
-
-            with open(info_path, "w") as f:
-                f.write(f'family_name = "{job['family_name']}"\n')
-                f.write(f'job_name = "{job['job_name']}"\n')
-                f.write(f'queue_name = "{job['queue_name']}"\n')
-                f.write(f'tz = "{job['tz']}"\n')
-                f.write(f'worker_name = "???"\n')
-                f.write(f'start_time = "{start_pretty}"\n')
-            err = run_shell_script(script_path)
-            with open(info_path, "a") as f:
-                f.write(f'error_code = {err}\n')
-        else:
-            now = MockDateTime.now(config.primary_tz)
-            start_small = now.strftime("%Y%m%d%H%M%S")
-            info_path = os.path.join(config.todays_log_dir,
-                                     f"{job['family_name']}.{job['job_name']}.{job['queue_name']}.x.{start_small}.info")
-
-            # if tokens_needed := job['tokens']:
-            #     logger.info(f"Checking for tokens {tokens_needed} for job: {job['family_name']}::{job['job_name']}")
-            #     tokens_available = PyTfToken.consume_token(config, tokens_needed, info_path)
-            #     if not tokens_available:
-            #         logger.warning(f"Not queuing job {job['family_name']}::{job['job_name']} - waiting on tokens")
-            #         continue
-
-            logger.info(f"Queuing job {job['family_name']}::{job['job_name']} on queue: {job['queue_name']}")
-            run_task.apply_async(args=[config.todays_log_dir,
-                                       config.job_dir,
-                                       config.primary_tz,
-                                       job['family_name'],
-                                       job['job_name'],
-                                       job['tz'],
-                                       job['queue_name'],
-                                       job_log_file,
-                                       info_path],
-                                 queue=job['queue_name'])
+        func = run_task.apply if config.run_local else run_task.apply_async
+        
+        func(args=[config.todays_log_dir,
+                                   config.job_dir,
+                                   config.primary_tz,
+                                   job['family_name'],
+                                   job['job_name'],
+                                   job['tz'],
+                                   job['queue_name'],
+                                   job_log_file,
+                                   info_path],
+                             queue=job['queue_name'])
