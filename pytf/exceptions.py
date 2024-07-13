@@ -22,6 +22,7 @@ MSG_CALENDAR_INVALID_RULE = "Invalid Calendar Rule:"
 MSG_CALENDAR_DANGLING_OFFSET = "No specifier after offset:"
 MSG_CALENDAR_OFFSET_AND_DATE = "Date of month not allowed when specifying day of week:"
 MSG_CALENDAR_INVALID_DATE = "Invalid date:"
+MSG_CALENDAR_UNKNOWN_WEEKDAY = "Unknown weekday:"
 
 MSG_CONFIG_PARSING_FAILED = "Failed to parse config file"
 MSG_CONFIG_MISSING_LOG_DIR = "Failed to parse config file - Missing log dir"

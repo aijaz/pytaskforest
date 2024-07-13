@@ -31,7 +31,7 @@ class Calendar:
         plus_or_minus = '+'
         components = rule.split()
         if len(components) == 0:
-            raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_INVALID_RULE} rule")
+            raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_INVALID_RULE} {rule}")
         elif len(components) > 1 and components[0] in '-+':
             plus_or_minus = components.pop(0)
 
@@ -67,7 +67,12 @@ class Calendar:
                 "sat": 5,
                 "sun": 6,
             }
-            dow = dows[components[1][:3].lower()]
+
+            dow_string = components[1][:3].lower()
+            try:
+                dow = dows[dow_string]
+            except KeyError as e:
+                raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_UNKNOWN_WEEKDAY} {dow_string}") from e
 
             # get rid of first 2 components
             components.pop(0)
@@ -100,7 +105,9 @@ class Calendar:
             except ValueError as e:
                 raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_INVALID_DATE} {yyyymmdd}") from e
 
-            if (yyyy != '*' and yyyy < 1970) or (mm != '*' and (mm < 1 or mm > 12)) or (dd != '*' and (dd < 1 or dd > 31)):
+            if (yyyy != '*' and yyyy < 1970) or \
+                    (mm != '*' and (mm < 1 or mm > 12)) or \
+                    (dd != '*' and (dd < 1 or dd > 31)):
                 raise ex.PyTaskforestParseException(f"{ex.MSG_CALENDAR_INVALID_DATE} {yyyymmdd}")
 
             # now try to eliminate based on yyyy mm and dd
@@ -139,7 +146,7 @@ class Calendar:
                 if nth > 0:
                     nth -= 1  # so we can use it as an array subscript
 
-                if nth == 4 and len(dates) < 5:
+                if abs(nth) == 4 and len(dates) < 5:
                     return False  # fifth dow does not exist
 
                 return plus_or_minus == '+' if dates[nth] == naive_date.day else None
