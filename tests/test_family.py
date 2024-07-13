@@ -1,5 +1,6 @@
 import os
 import pathlib
+import time
 
 import pytest
 import tomlkit
@@ -22,22 +23,6 @@ from pytf.rerun import rerun
 from pytf.pytftoken import PyTfToken
 from pytf.runner import prepare_required_dirs
 from pytf.main import main, setup_logging_and_tokens
-
-
-@pytest.fixture
-def three_forest_family():
-    return """start="0214", tz = "GMT", queue="main", email="a@b.c"
-
-    J1() J2() # bar
-    # foo
-      J3() # foo
-    J4() J5()
-    ---
-    # foo
-    J6()  J7() J8() J9()
-     - - - - - - - - -- ---- ------- - - - # ksdjflsdkjflsk
-     J10()
-    """
 
 
 @pytest.fixture
@@ -107,6 +92,21 @@ def one_token_config():
     name="T1"
     num_instances=1
     
+    """)
+
+
+@pytest.fixture
+def long_running_config():
+    return Config.from_str("""
+    primary_tz = "America/Denver"
+    run_local = true
+    
+    calendars.mondays = [
+      "every Monday */*"
+    ]
+    
+    end_time_hr=3
+    end_time_min=0    
     """)
 
 
@@ -2055,4 +2055,46 @@ def test_end_to_end_day_exclude(one_token_config, tmp_path):
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
     assert len(families) == 1
     assert families[0].name == 'F2'
+    MockDateTime.reset_mock_now()
+
+
+def test_end_to_end_no_ready_jobs(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="2100", queue="main", email="a@b.c"
+    J0_1()
+    """
+    f2_str = """start="2100", queue="main", email="a@b.c"
+    J0_2()
+    """
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 0, 'America/Denver')
+
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str},
+                                    {"name": 'F2', "str": f2_str}])
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Waiting', 'Waiting']
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Waiting', 'Waiting']
+    MockDateTime.reset_mock_now()
+
+
+def test_end_to_end_no_ready_jobs_run_out_of_time(long_running_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = long_running_config
+    f1_str = """start="2100", queue="main", email="a@b.c"
+    J0_1()
+    """
+    f2_str = """start="2100", queue="main", email="a@b.c"
+    J0_2()
+    """
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 0, 'America/Denver')
+
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str},
+                                    {"name": 'F2', "str": f2_str}])
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Waiting', 'Waiting']
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Waiting', 'Waiting']
     MockDateTime.reset_mock_now()

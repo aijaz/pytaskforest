@@ -5,8 +5,8 @@ import os
 import pytz
 
 from .config import Config
-from .mockdatetime import MockDateTime, MockSleep
-from .runner import prepare_required_dirs, run_shell_script
+from .mockdatetime import MockDateTime
+from .runner import prepare_required_dirs
 from .pytf_worker import run_task
 from .status import status_and_families_and_token_doc
 from .pytftoken import PyTfToken
@@ -47,8 +47,6 @@ def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run)
         now: datetime.datetime = MockDateTime.now(config.primary_tz)
         todays_family_dir = dirs.dated_dir(os.path.join(config.family_dir, "{YYYY}{MM}{DD}"), now)
         dirs.copy_files_from_dir_to_dir(config.family_dir, todays_family_dir)
-        if now >= end_time:
-            break
 
         function_to_run(config)  # Assume this takes less than a minute to run
 
@@ -59,7 +57,11 @@ def run_main_loop_until_end(config: Config, end_time: datetime, function_to_run)
         now: datetime.datetime = MockDateTime.now(tz=config.primary_tz)
         sleep_time_left = sleep_time - (now.second % sleep_time)
         logger.info(f"Sleeping for {sleep_time_left}")
-        MockSleep.sleep(sleep_time_left)
+        MockDateTime.sleep(sleep_time_left)
+
+        if now >= end_time:
+            logger.info("We are at or past the end time. Exiting loop.")
+            break
 
 
 def main_function(config: Config):
@@ -92,14 +94,29 @@ def main_function(config: Config):
         logger.info(f"Queuing job {job['family_name']}::{job['job_name']} on queue: {job['queue_name']}")
 
         func = run_task.apply if config.run_local else run_task.apply_async
-        
+        # func = _local_run if config.run_local else run_task.apply_async
+
         func(args=[config.todays_log_dir,
-                                   config.job_dir,
-                                   config.primary_tz,
-                                   job['family_name'],
-                                   job['job_name'],
-                                   job['tz'],
-                                   job['queue_name'],
-                                   job_log_file,
-                                   info_path],
-                             queue=job['queue_name'])
+                   config.job_dir,
+                   config.primary_tz,
+                   job['family_name'],
+                   job['job_name'],
+                   job['tz'],
+                   job['queue_name'],
+                   job_log_file,
+                   info_path],
+             queue=job['queue_name'])
+
+
+# def _local_run(args, queue):
+#     print("In local run")
+#     logger = logging.getLogger('pytf_logger')
+#     pid_after_fork = os.fork()
+#     if pid_after_fork > 0:
+#         logger.info(f"In parent, child pid = {pid_after_fork}")
+#         print(f"In parent, child pid = {pid_after_fork}")
+#     else:
+#         logger.info(f"In child: pid == {os.getpid()}")
+#         print(f"In child: pid == {os.getpid()}")
+#         run_task.apply(args=args, queue=queue)
+#         sys.exit(0)

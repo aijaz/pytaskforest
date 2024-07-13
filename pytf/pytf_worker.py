@@ -38,16 +38,22 @@ def run(todays_log_dir: str,
         run_logger.warning(f"Not writing to info file {info_path} because the file already exists")
         return
 
+    worker_pid = os.getpid()
+    process = start_process(script_path)
+    job_pid = process.pid
+
     with open(info_path, "w") as f:
         f.write(f'family_name = "{family_name}"\n')
         f.write(f'job_name = "{job_name}"\n')
         f.write(f'queue_name = "{job_queue_name}"\n')
         f.write(f'tz = "{job_tz}"\n')
         f.write(f'worker_name = "???"\n')
+        f.write(f'worker_pid = {worker_pid}\n')
+        f.write(f'job_pid = {job_pid}\n')
         f.write(f'start_time = "{start_pretty}"\n')
         f.write(f'job_log_file = "{job_log_file}"\n')
 
-    err = run_shell_script(script_path)
+    err = poll_process(process)
 
     with open(info_path, "a") as f:
         f.write(f'error_code = {err}\n')
@@ -78,15 +84,17 @@ def time_zoned_now(tz: str = "UTC") -> datetime:
     return datetime.now(timezone.utc).astimezone(pytz.timezone(tz))
 
 
-def run_shell_script(script_path: str):
-    run_logger = logging.getLogger('run_logger')
-
-    process = subprocess.Popen(
+def start_process(script_path: str):
+    return subprocess.Popen(
         script_path,
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
+
+
+def poll_process(process):
+    run_logger = logging.getLogger('run_logger')
 
     while True:
         if line := process.stdout.readline().decode('utf-8').strip():

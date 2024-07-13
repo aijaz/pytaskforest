@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 import pytz
@@ -35,24 +35,17 @@ class MockDateTime:
             else datetime.now(timezone.utc).astimezone(pytz.timezone(tz))
 
     @classmethod
+    def sleep(cls, s):
+        func = time.sleep if cls._mock_now is None else cls._mock_sleep
+        func(s)
+
+    @classmethod
+    def _mock_sleep(cls, s):
+        cls._mock_now = cls._mock_now + timedelta(seconds=s)
+
+
+    @classmethod
     def dow(cls, tz: str = "UTC") -> str:
         index = cls.now(tz).weekday()
         return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]
 
-
-class MockSleep:
-    _sleep_should_be_mocked: bool = False
-
-    @classmethod
-    def mock_sleep(cls):
-        cls._sleep_should_be_mocked = True
-
-    @classmethod
-    def dont_mock_sleep(cls):
-        cls._sleep_should_be_mocked = False
-
-    @classmethod
-    def sleep(cls, seconds: int):
-        if cls._sleep_should_be_mocked:
-            return
-        time.sleep(seconds)
