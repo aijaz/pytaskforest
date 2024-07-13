@@ -27,10 +27,10 @@ class PyTfToken:
         aot = None
 
         for token in token_usage_doc['token']:
-            all_info_files = os.listdir(config.todays_log_dir)
+            all_log_dir_files = os.listdir(config.todays_log_dir)
             family_name = token['family_name']
             job_name = token['job_name']
-            info_files = [f for f in all_info_files if f.startswith(f"{family_name}.{job_name}.") and f.endswith(".info")]
+            info_files = [f for f in all_log_dir_files if f.startswith(f"{family_name}.{job_name}.") and f.endswith(".info")]
             if len(info_files) != 1:
                 continue
             info_file = info_files[0]
