@@ -260,7 +260,7 @@ class Family:
         if d.get('calendar'):
             calendar_name = d['calendar']
             try:
-                rules = fam.config['calendars'][calendar_name]
+                rules = fam.config.calendars[calendar_name]
             except KeyError as e:
                 raise ex.PyTaskforestParseException(f"{ex.MSG_FAMILY_UNKNOWN_CALENDAR} {calendar_name}") from e
 

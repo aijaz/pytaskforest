@@ -9,7 +9,7 @@ from pytf.pytftoken import PyTfToken
 
 
 @define
-class Config():
+class Config:
     toml_str: str = field(init=True)
     d = field(init=False)
 
@@ -33,7 +33,6 @@ class Config():
     log_level: int | None = field(default=logging.WARN)
     ignore_regex: [str] = field()
 
-
     @ignore_regex.default
     def _ignore_regex_default(self):
         return [".*~$", ".*\\.bak$", ".*\\$$"]
@@ -45,9 +44,7 @@ class Config():
     web_hook: str = field(default=None)
     hook_auth: str = field(default=None)
     primary_tz: str = field(default="UTC")
-
-    def __getitem__(self, item):
-        return self.d[item]
+    calendars: dict = field(default={})
 
     def set_if_not_none(self, key, orig_value):
         return self.d[key] if self.d.get(key) is not None else orig_value
@@ -75,6 +72,7 @@ class Config():
             obj.primary_tz = obj.set_if_not_none('primary_tz', obj.primary_tz)
             obj.run_local = obj.set_if_not_none('run_local', obj.run_local)
             obj.once_only = obj.set_if_not_none('once_only', obj.once_only)
+            obj.calendars = obj.set_if_not_none('calendars', obj.once_only)
 
             if temp_tokens := obj.set_if_not_none('tokens', obj.tokens):
                 obj.tokens = [

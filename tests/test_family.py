@@ -112,6 +112,14 @@ def denver_config():
 
 
 @pytest.fixture
+def empty_cal_config():
+    return Config.from_str("""
+    calendars.empty = [
+    ]
+    """)
+
+
+@pytest.fixture
 def two_cal_config():
     return Config.from_str("""
     calendars.daily = [
@@ -238,6 +246,19 @@ def test_split_jobs_repeat():
     line = "J6(every=900)  J7() J8() J9() J2()"
     jobs = Forest.split_jobs(line, '')
     assert [j.job_name for j in jobs] == ['J6', 'J7', 'J8', 'J9', 'J2']
+
+
+def test_empty_calendar(empty_cal_config):
+    family_str = """start="0214", calendar="empty", tz = "GMT", queue="main", email="a@b.c"
+    foo
+    bar
+    baz
+    """
+    fam = Family.parse("family", family_str, config=empty_cal_config)
+    assert fam
+    assert isinstance(fam.calendar_or_days, Calendar)
+    cal:Calendar = fam.calendar_or_days
+    assert cal.rules == []
 
 
 def test_days_wrong_type(two_cal_config):
