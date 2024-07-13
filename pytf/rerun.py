@@ -22,7 +22,9 @@ def rerun(config:Config, family, job):
     """
     all_files = os.listdir(config.todays_log_dir)
     all_info_files = [fn for fn in all_files
-                      if fn.startswith(f"{family}.{job}.")]
+                      if (fn.startswith(f"{family}.{job}.")
+                          or fn.startswith(f"{family}.{job}-Orig-"))
+                      and fn.endswith(".info")]
     next_info_number = 1
     r = re.compile(r'-Orig-(\d+)\.')
     existing_info_numbers = [int(re.findall(r, fn)[0]) for fn in all_info_files if re.findall(r, fn)]

@@ -1873,6 +1873,58 @@ def test_token_end_to_end_complex(one_token_config, tmp_path):
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Success']
 
 
+def test_rerun_twice_files(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="0000", queue="main", email="a@b.c"
+    J0_1()
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str}])
+    print(f"{cfg.log_dir=}")
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
+    assert cfg.once_only
+    assert cfg.run_local
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success']
+
+    MockDateTime.set_mock(2024, 2, 14, 2, 15, 0, 'America/Denver')
+    PyTfToken.update_token_usage(cfg)
+    rerun(cfg, 'F1', 'J0_1')
+    files = sorted(os.listdir(cfg.todays_log_dir))
+    assert files == ['F1.J0_1-Orig-1.default.x.20240214021400.info',
+                     'F1.J0_1.log',
+                     'F1.J0_1.release']
+
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success']
+
+    MockDateTime.set_mock(2024, 2, 14, 2, 16, 0, 'America/Denver')
+    PyTfToken.update_token_usage(cfg)
+    rerun(cfg, 'F1', 'J0_1')
+    files = sorted(os.listdir(cfg.todays_log_dir))
+    assert files == ['F1.J0_1-Orig-1.default.x.20240214021400.info',
+                     'F1.J0_1-Orig-2.default.x.20240214021500.info',
+                     'F1.J0_1.log',
+                     'F1.J0_1.release']
+
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success']
+    files = sorted(os.listdir(cfg.todays_log_dir))
+    assert files == ['F1.J0_1-Orig-1.default.x.20240214021400.info',
+                     'F1.J0_1-Orig-2.default.x.20240214021500.info',
+                     'F1.J0_1.default.x.20240214021600.info',
+                     'F1.J0_1.log',
+                     'F1.J0_1.release']
+
+
+
+
+
+
 def test_hold_when_release_exists(one_token_config, tmp_path):
     # sourcery skip: extract-duplicate-method
     cfg = one_token_config
