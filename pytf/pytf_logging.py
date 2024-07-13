@@ -1,4 +1,5 @@
 import logging
+import logging.config
 import os
 
 
@@ -53,14 +54,22 @@ def get_logging_config(log_dir: str):
                 "level": "INFO",
                 "formatter": "detailed",
                 "filename": os.path.join(log_dir, "pytf.log"),
-                "maxBytes": 10000000,
+                "maxBytes": 10_000_000,
                 "backupCount": 10,
+            },
+            "json": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "level": "INFO",
+                "formatter": "json",
+                "filename": os.path.join(log_dir, "pytf.jlog"),
+                "maxBytes": 10_000_000,
+                "backupCount": 2,
             },
         },
         "loggers": {
             "root": {
                 "level": "DEBUG",
-                "handlers": ["console", "file"]
+                "handlers": ["console", "file", "json"]
             }
         }
     }

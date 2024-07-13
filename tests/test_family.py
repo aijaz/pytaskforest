@@ -1815,8 +1815,24 @@ def prep_end_to_end(tmp_path, config, families):
             
             echo "Job: J{sleep_time}_{idx}"
             echo "Sleeping for {sleep_time}"
+            >&2 echo "This is a line that goes to stderr"
             sleep {sleep_time}
             echo "Done"
+            >&2 echo "This is a line that goes to stderr"
+            """)
+        os.chmod(file_path, 0o755)
+
+        file_path = os.path.join(config.job_dir, f"F{sleep_time}_{idx}")
+        with open(file_path, "w") as fp:
+            fp.write(f"""#!/bin/bash
+            
+            echo "Job: F{sleep_time}_{idx}"
+            echo "Sleeping for {sleep_time}"
+            >&2 echo "This is a line that goes to stderr"
+            sleep {sleep_time}
+            echo "Done"
+            >&2 echo "This is a line that goes to stderr"
+            exit 1
             """)
         os.chmod(file_path, 0o755)
 
@@ -1957,5 +1973,22 @@ def test_release_when_hold_exists(one_token_config, tmp_path):
     files = os.listdir(one_token_config.todays_log_dir)
     assert "F1.J0_1.hold" not in files
     assert "F1.J0_1.release"  in files
+
+
+def test_end_to_end_fail(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+F0_1()
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": family_str}])
+    print(f"{cfg.log_dir=}")
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
+    assert cfg.once_only
+    assert cfg.run_local
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Failure']
 
 
