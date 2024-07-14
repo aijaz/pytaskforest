@@ -34,10 +34,6 @@ def run(todays_log_dir: str,
     run_logger.info(f"Run Logger: Worker gonna run job {family_name}::{job_name}: {script_path}")
     start_pretty = time_zoned_now().astimezone(pytz.timezone(job_tz)).strftime("%Y/%m/%d %H:%M:%S")
 
-    if os.path.exists(info_path):
-        run_logger.warning(f"Not writing to info file {info_path} because the file already exists")
-        return
-
     worker_pid = os.getpid()
     process = start_process(script_path)
     job_pid = process.pid

@@ -9,21 +9,21 @@ from .job_status import JobStatus
 
 
 def get_held_jobs(log_dir: str):
-    held_jobs = { }
+    held_jobs = {}
     held_files = [(fn.split(".")) for fn in os.listdir(log_dir) if fn.endswith(".hold")]
     for f, j, _ in held_files:
         if held_jobs.get(f) is None:
-            held_jobs[f] = { }
+            held_jobs[f] = {}
         held_jobs[f][j] = True
     return held_jobs
 
 
 def get_released_jobs(log_dir: str):
-    released_jobs = { }
+    released_jobs = {}
     released_files = [(fn.split(".")) for fn in os.listdir(log_dir) if fn.endswith(".release")]
     for f, j, _ in released_files:
         if released_jobs.get(f) is None:
-            released_jobs[f] = { }
+            released_jobs[f] = {}
         released_jobs[f][j] = True
     return released_jobs
 
