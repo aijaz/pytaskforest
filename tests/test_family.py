@@ -68,12 +68,8 @@ def two_token_config():
     primary_tz = "America/Denver"
     once_only = true
     run_local = true
-    [[tokens]]
-    name="T3"
-    num_instances=3
-    [[tokens]]
-    name="T2"
-    num_instances=2
+    tokens.T3 = 3
+    tokens.T2 = 2
     """)
 
 
@@ -88,9 +84,7 @@ def one_token_config():
       "every Monday */*"
     ]
     
-    [[tokens]]
-    name="T1"
-    num_instances=1
+    tokens.T1 = 1
     
     """)
 
@@ -2098,3 +2092,56 @@ def test_end_to_end_no_ready_jobs_run_out_of_time(long_running_config, tmp_path)
     status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Waiting', 'Waiting']
     MockDateTime.reset_mock_now()
+
+
+def test_token_end_to_end_complex_still_running(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="0000", queue="main", email="a@b.c"
+    J0_1(tokens=["T1"])
+    """
+    f2_str = """start="0000", queue="main", email="a@b.c"
+    J0_2(tokens=["T1"])
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str}, {"name": 'F2', "str": f2_str}])
+    print(f"{cfg.log_dir=}")
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready', 'Token Wait']
+    assert cfg.once_only
+    assert cfg.run_local
+    run_main(cfg)
+    # now remove error code to imply it's still running
+    info_files = [f for f in os.listdir(one_token_config.todays_log_dir) if f.endswith(".info")]
+    assert len(info_files) == 1
+    file_name = os.path.join(one_token_config.todays_log_dir, info_files[0])
+    file_path = os.path.join(one_token_config.todays_log_dir, file_name)
+    file_contents = pathlib.Path(file_path).read_text()
+    doc = tomlkit.loads(file_contents)
+    del(doc['error_code'])
+    new_contents = tomlkit.dumps(doc)
+    with open(file_path, "w") as f:
+        f.write(new_contents)
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Running', 'Token Wait']
+
+
+def test_token_end_to_end_complex_unknown_token(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    f1_str = """start="0000", queue="main", email="a@b.c"
+    J0_1(tokens=["T1"])
+    """
+    f2_str = """start="0000", queue="main", email="a@b.c"
+    J0_2(tokens=["T4"])
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": f1_str}, {"name": 'F2', "str": f2_str}])
+    print(f"{cfg.log_dir=}")
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready', 'Token Wait']
+    assert cfg.once_only
+    assert cfg.run_local
+    run_main(cfg)
+    PyTfToken.update_token_usage(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Token Wait']

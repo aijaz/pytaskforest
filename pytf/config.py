@@ -76,8 +76,8 @@ class Config:
 
             if temp_tokens := obj.set_if_not_none('tokens', obj.tokens):
                 obj.tokens = [
-                    PyTfToken(token_dict['name'], token_dict['num_instances'])
-                    for token_dict in temp_tokens
+                    PyTfToken(k, v)
+                    for k, v in temp_tokens.items()
                 ]
                 for tok in obj.tokens:
                     obj.tokens_by_name[tok.name] = tok

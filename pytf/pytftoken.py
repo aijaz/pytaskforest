@@ -30,9 +30,11 @@ class PyTfToken:
             all_log_dir_files = os.listdir(config.todays_log_dir)
             family_name = token['family_name']
             job_name = token['job_name']
-            info_files = [f for f in all_log_dir_files if f.startswith(f"{family_name}.{job_name}.") and f.endswith(".info")]
-            if len(info_files) != 1:
-                continue
+            info_files = [f for f in all_log_dir_files
+                          if f.startswith(f"{family_name}.{job_name}.")
+                          and f.endswith(".info")
+                          ]
+
             info_file = info_files[0]
             info_file_path = os.path.join(config.todays_log_dir, info_file)
             info_doc = tomlkit.loads(pathlib.Path(info_file_path).read_text())
@@ -62,10 +64,8 @@ class PyTfToken:
     def save_token_document(config, doc: tomlkit.TOMLDocument):
         token_file = os.path.join(config.log_dir, "token_usage.toml")
         with open(token_file, "w") as f:
-            if doc is None:
-                f.write("")
-            else:
-                f.write(tomlkit.dumps(doc))
+            # doc is never None
+            f.write(tomlkit.dumps(doc))
 
     @staticmethod
     def consume_tokens_from_doc(config, token_names, token_usage_doc, family_name, job_name) -> tomlkit.TOMLDocument|None:
