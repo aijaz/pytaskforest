@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import traceback
 
 import pytz
 
@@ -12,6 +13,7 @@ from .status import status_and_families_and_token_doc
 from .pytftoken import PyTfToken
 from .pytf_logging import setup_logging
 import pytf.dirs as dirs
+import pytf.exceptions as ex
 
 
 def setup_logging_and_tokens(config):
@@ -35,6 +37,29 @@ def main(config: Config):
                                                                            minute=config.end_time_min))
     logger.info(f"Running until {end_time}")
     logger.info(f"{config.run_local=}")
+    run_main_loop_until_end(config, end_time, main_function)
+
+
+def main_with_exception_for_testing(config: Config):
+    logger = logging.getLogger('pytf_logger')
+
+    now = prepare_required_dirs(config)
+
+    end_time = pytz.timezone(config.primary_tz).localize(datetime.datetime(year=now.year,
+                                                                           month=now.month,
+                                                                           day=now.day,
+                                                                           hour=config.end_time_hr,
+                                                                           minute=config.end_time_min))
+    logger.info(f"Running until {end_time}")
+    logger.info(f"{config.run_local=}")
+
+    try:
+        _ = 1/0
+    except ZeroDivisionError as e:
+        logger.critical("ZeroDivisionError", exc_info=e, stack_info=traceback.format_exc())
+        # logger.exception(e)
+        # raise ex.PyTaskforestParseException('ZeroDivisionError') from e
+
     run_main_loop_until_end(config, end_time, main_function)
 
 

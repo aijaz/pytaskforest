@@ -22,7 +22,7 @@ from pytf.holdAndRelease import (hold, remove_hold, release_dependencies)
 from pytf.rerun import rerun
 from pytf.pytftoken import PyTfToken
 from pytf.runner import prepare_required_dirs
-from pytf.main import main, setup_logging_and_tokens
+from pytf.main import main, setup_logging_and_tokens, main_with_exception_for_testing
 
 
 @pytest.fixture
@@ -1863,6 +1863,11 @@ def run_main(cfg):
     main(cfg)
 
 
+def run_main_with_exception_for_testing(cfg):
+    setup_logging_and_tokens(cfg)
+    main_with_exception_for_testing(cfg)
+
+
 def test_token_end_to_end_simple(one_token_config, tmp_path):
     # sourcery skip: extract-duplicate-method
     cfg = one_token_config
@@ -2145,3 +2150,24 @@ def test_token_end_to_end_complex_unknown_token(one_token_config, tmp_path):
     PyTfToken.update_token_usage(cfg)
     status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Token Wait']
+
+
+def test_token_end_to_end_simple_exception(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+J0_1()
+J0_2()
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": family_str}])
+    print(f"{cfg.log_dir=}")
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready', 'Waiting']
+    assert cfg.once_only
+    assert cfg.run_local
+    run_main_with_exception_for_testing(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Ready']
+    run_main_with_exception_for_testing(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Success']
