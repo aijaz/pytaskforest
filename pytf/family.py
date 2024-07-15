@@ -169,7 +169,7 @@ class Family:
                     chained=None,
                     tokens=list(job.tokens) if job.tokens else job.tokens,
                     num_retries=job.num_retries,
-                    retry_sleep_min=job.retry_sleep_min,
+                    retry_sleep=job.retry_sleep,
                     queue=job.queue,
                     email=job.email,
                     retry_email=job.retry_email,

@@ -12,6 +12,8 @@ class JobResult:
     status: JobStatus
     queue_name: str
     tz: str | None = field(default=None)
+    num_retries: int = field(default=0)
+    retry_sleep: int = field(default=10)
     worker_name: str | None = field(default=None)
     start_time: str | None = field(default=None)  # this comes in from parsing a string from .info
     error_code: int | None = field(default=None)
@@ -19,7 +21,7 @@ class JobResult:
 
     
 def serializer(_, field, value):
-    if  isinstance(value, JobStatus):
+    if isinstance(value, JobStatus):
         return value.value
     elif isinstance(value, list):
         return list(value)

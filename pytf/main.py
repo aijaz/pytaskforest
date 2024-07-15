@@ -128,6 +128,8 @@ def main_function(config: Config):
                    job['job_name'],
                    job['tz'],
                    job['queue_name'],
+                   job['num_retries'],
+                   job['retry_sleep'],
                    job_log_file,
                    info_path],
              queue=job['queue_name'])

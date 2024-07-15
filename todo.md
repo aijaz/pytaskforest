@@ -27,6 +27,7 @@
 - [x] Release Hold
 - [x] Release Dependencies
 - [x] Rerun
+- [ ] Automatic retries
 
 
 

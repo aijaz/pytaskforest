@@ -23,8 +23,8 @@ class Job:
     until_min: int | None = field(default=None)
     chained: bool | None = field(default=None)
     tokens: list[str] | None = field(default=[])
-    num_retries: int | None = field(default=None)
-    retry_sleep_min: int | None = field(default=None)
+    num_retries: int = field(default=0)
+    retry_sleep: int = field(default=0)
     queue: str | None = field(default="default")
     email: str | None = field(default=None)
     retry_email: str | None = field(default=None)
@@ -80,7 +80,7 @@ class Job:
         j.chained = d.get('chained')
         j.tokens = d.get('tokens')
         j.num_retries = d.get('num_retries')
-        j.retry_sleep_min = d.get('retry_sleep_min')
+        j.retry_sleep = d.get('retry_sleep')
         j.queue = d.get('queue', 'default')
         j.email = d.get('email')
         j.retry_email = d.get('retry_email')
@@ -149,7 +149,7 @@ class Job:
         ints = [
             'every',
             'num_retries',
-            'retry_sleep_min',
+            'retry_sleep',
         ]
         for key in ints:
             if key in d and type(d[key]) is not tomlkit.items.Integer:
@@ -166,7 +166,7 @@ class Job:
             'chained',
             'tokens',
             'num_retries',
-            'retry_sleep_min',
+            'retry_sleep',
             'queue',
             'email',
             'retry_email',

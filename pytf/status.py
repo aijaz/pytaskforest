@@ -77,10 +77,38 @@ def _get_family_status(config, family, logged_jobs_dict, held_jobs, released_job
     for job_name in sorted(family.jobs_by_name.keys()):
         job_queue = family.jobs_by_name[job_name].queue
         job_tz = family.jobs_by_name[job_name].tz or family.tz or config.primary_tz
-        _get_job_status(family, job_name, logged_jobs_dict, held_jobs, released_jobs, job_queue, job_tz, result)
+        job_num_retries = family.jobs_by_name[job_name].num_retries
+        if job_num_retries is None:
+            job_num_retries = family.config.num_retries
+        if job_num_retries is None:
+            job_num_retries = 0
+        job_retry_sleep = family.jobs_by_name[job_name].retry_sleep
+        if job_retry_sleep is None:
+            job_retry_sleep = family.config.retry_sleep
+        if job_retry_sleep is None:
+            job_retry_sleep = 0
+        _get_job_status(family=family,
+                        job_name=job_name,
+                        logged_jobs_dict=logged_jobs_dict,
+                        held_jobs=held_jobs,
+                        released_jobs=released_jobs,
+                        job_queue=job_queue,
+                        job_tz=job_tz,
+                        job_num_retries=job_num_retries,
+                        job_retry_sleep=job_retry_sleep,
+                        result=result)
 
 
-def _get_job_status(family, job_name, logged_jobs_dict, held_jobs, released_jobs, job_queue, job_tz, result):
+def _get_job_status(family,
+                    job_name,
+                    logged_jobs_dict,
+                    held_jobs,
+                    released_jobs,
+                    job_queue,
+                    job_tz,
+                    job_num_retries,
+                    job_retry_sleep,
+                    result):
     family_name = family.name
     if logged_jobs_dict.get(family_name) and logged_jobs_dict[family_name].get(job_name):
         job_result_dict = asdict(logged_jobs_dict[family_name].get(job_name), value_serializer=serializer)
@@ -95,11 +123,13 @@ def _get_job_status(family, job_name, logged_jobs_dict, held_jobs, released_jobs
 
         job_status = JobStatus.RELEASED if released else JobStatus.HOLD if held else JobStatus.WAITING if unmet else JobStatus.READY
 
-        the_job_result = JobResult(family_name,
-                                   job_name,
-                                   job_status,
-                                   job_queue,
-                                   job_tz,
+        the_job_result = JobResult(family_name=family_name,
+                                   job_name=job_name,
+                                   status=job_status,
+                                   queue_name=job_queue,
+                                   tz=job_tz,
+                                   num_retries=job_num_retries,
+                                   retry_sleep=job_retry_sleep,
                                    tokens=family.jobs_by_name[job_name].tokens)
         # noinspection PyTypeChecker
         job_result_dict = asdict(the_job_result, value_serializer=serializer)
