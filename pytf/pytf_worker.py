@@ -84,14 +84,13 @@ def run(todays_log_dir: str,
             with open(info_path, "w") as f:
                 f.write(tomlkit.dumps(doc))
 
-            runs_completed += 1
-
             time.sleep(job_retry_sleep)
         else:
             run_logger.error("No more retries. Logging the failure.")
             with open(info_path, "a") as f:
                 f.write(f'error_code = {err}\n')
-            runs_completed += 1
+
+        runs_completed += 1
 
 
 @celery_app.task(name='celery.run_task')

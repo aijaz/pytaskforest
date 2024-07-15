@@ -43,6 +43,7 @@ def get_logged_job_results(log_dir: str) -> ([JobResult], dict[str, object]):
 
     for prefix in prefixes:
         job_info_str = pathlib.Path(os.path.join(log_dir, f"{prefix}.info")).read_text()
+        print(job_info_str)
         job_info = tomlkit.loads(job_info_str)
         status = JobStatus.RUNNING
         error_code = job_info.get('error_code')
@@ -51,11 +52,16 @@ def get_logged_job_results(log_dir: str) -> ([JobResult], dict[str, object]):
             status = JobStatus.FAILURE if error_code else JobStatus.SUCCESS
             error_code = job_info['error_code']
 
+        if job_info.get('retry_wait_until'):
+            status = JobStatus.RETRY_WAIT
+
         job_result = JobResult(family_name=job_info['family_name'],
                                job_name=job_info['job_name'],
                                status=status,
                                tz=job_info['tz'],  # this will always be config.primary_tz
                                queue_name=job_info['queue_name'],
+                               num_retries=job_info['num_retries'],
+                               retry_sleep=job_info['retry_sleep'],
                                worker_name=job_info['worker_name'],
                                error_code=error_code,
                                start_time=job_info["start_time"],

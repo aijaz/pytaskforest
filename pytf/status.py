@@ -74,13 +74,16 @@ def _get_status(config, families, log_dir, result):
 def _get_family_status(config, family, logged_jobs_dict, held_jobs, released_jobs, result):
     result['status']['family'][family.name] = []
 
+    def coalesce(*args):
+        for arg in args:
+            if arg is not None:
+                return arg
+
     for job_name in sorted(family.jobs_by_name.keys()):
         job_queue = family.jobs_by_name[job_name].queue
         job_tz = family.jobs_by_name[job_name].tz or family.tz or config.primary_tz
-        if job_num_retries := family.jobs_by_name[job_name].num_retries is None:
-            job_num_retries = family.config.num_retries
-        if job_retry_sleep := family.jobs_by_name[job_name].retry_sleep is None:
-            job_retry_sleep = family.config.retry_sleep
+        job_num_retries = coalesce(family.jobs_by_name[job_name].num_retries, family.config.num_retries)
+        job_retry_sleep = coalesce(family.jobs_by_name[job_name].retry_sleep, family.config.retry_sleep)
         _get_job_status(family=family,
                         job_name=job_name,
                         logged_jobs_dict=logged_jobs_dict,

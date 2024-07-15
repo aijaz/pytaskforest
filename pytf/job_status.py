@@ -10,4 +10,4 @@ class JobStatus(Enum):
     SUCCESS = "Success"
     FAILURE = "Failure"
     HOLD = "On Hold"
-    RETRY_SLEEP = "Retry Wait"
+    RETRY_WAIT = "Retry Wait"

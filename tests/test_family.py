@@ -912,6 +912,8 @@ def create_job_done_file(d, fn, jn, tz, q, w, st, ec):
         f.write(f'job_name = "{jn}"\n')
         f.write(f'tz = "{tz}"\n')
         f.write(f'queue_name = "{q}"\n')
+        f.write(f'num_retries = 0\n')
+        f.write(f'retry_sleep = 0\n')
         f.write(f'worker_name = "{w}"\n')
         f.write(f'start_time = "{st}"\n')
         f.write(f'error_code = {ec}\n')
@@ -925,6 +927,8 @@ def create_job_running_file(d, fn, jn, tz, q, w, st):
         f.write(f'job_name = "{jn}"\n')
         f.write(f'tz = "{tz}"\n')
         f.write(f'queue_name = "{q}"\n')
+        f.write(f'num_retries = 0\n')
+        f.write(f'retry_sleep = 0\n')
         f.write(f'worker_name = "{w}"\n')
         f.write('start_time = "{st}"\n')
     return file_name
@@ -2171,3 +2175,51 @@ J0_2()
     run_main_with_exception_for_testing(cfg)
     status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
     assert [j['status'] for j in status_json['status']['flat_list']] == ['Success', 'Success']
+
+
+def test_token_end_to_end_retry(one_token_config, tmp_path):
+    # sourcery skip: extract-duplicate-method
+    cfg = one_token_config
+    family_str = """start="0000", queue="main", email="a@b.c"
+F0_1(num_retries=1, retry_sleep=1)
+    """
+    prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": family_str}])
+    print(f"{cfg.log_dir=}")
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
+    assert cfg.once_only
+    assert cfg.run_local
+    run_main(cfg)
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Failure']
+    info_files = [f for f in os.listdir(one_token_config.todays_log_dir) if f.endswith(".info")]
+    assert len(info_files) == 1
+    file_name = os.path.join(one_token_config.todays_log_dir, info_files[0])
+    file_path = os.path.join(one_token_config.todays_log_dir, file_name)
+    file_contents = pathlib.Path(file_path).read_text()
+    doc = tomlkit.loads(file_contents)
+    del doc['error_code']
+    del doc['job_pid']
+    doc['retry_wait_until'] = int(time.time())
+    with open(file_path, "w") as f:
+        f.write(tomlkit.dumps(doc))
+    status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+    assert [j['status'] for j in status_json['status']['flat_list']] == ['Retry Wait']
+
+
+# def test_token_end_to_end_retry_wait(one_token_config, tmp_path):
+#     # sourcery skip: extract-duplicate-method
+#     cfg = one_token_config
+#     family_str = """start="0000", queue="main", email="a@b.c"
+# F0_1(num_retries=1, retry_sleep=1)
+#     """
+#     prep_end_to_end(tmp_path, cfg, [{"name": 'F1', "str": family_str}])
+#     print(f"{cfg.log_dir=}")
+#     status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+#     assert [j['status'] for j in status_json['status']['flat_list']] == ['Ready']
+#     assert cfg.once_only
+#     assert cfg.run_local
+#     run_main(cfg)
+#     status_json, families, new_token_doc = status_and_families_and_token_doc(cfg)
+#     assert [j['status'] for j in status_json['status']['flat_list']] == ['Failure']
+#
