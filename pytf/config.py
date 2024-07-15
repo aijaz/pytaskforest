@@ -39,8 +39,8 @@ class Config:
 
     tokens: [PyTfToken] = field(default=[])
     tokens_by_name: dict = field(default={})
-    num_retries: int = field(default=1)
-    retry_sleep: int = field(default=300)
+    num_retries: int = field(default=0)
+    retry_sleep: int = field(default=1)
     web_hook: str = field(default=None)
     hook_auth: str = field(default=None)
     primary_tz: str = field(default="UTC")

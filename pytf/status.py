@@ -77,16 +77,10 @@ def _get_family_status(config, family, logged_jobs_dict, held_jobs, released_job
     for job_name in sorted(family.jobs_by_name.keys()):
         job_queue = family.jobs_by_name[job_name].queue
         job_tz = family.jobs_by_name[job_name].tz or family.tz or config.primary_tz
-        job_num_retries = family.jobs_by_name[job_name].num_retries
-        if job_num_retries is None:
+        if job_num_retries := family.jobs_by_name[job_name].num_retries is None:
             job_num_retries = family.config.num_retries
-        if job_num_retries is None:
-            job_num_retries = 0
-        job_retry_sleep = family.jobs_by_name[job_name].retry_sleep
-        if job_retry_sleep is None:
+        if job_retry_sleep := family.jobs_by_name[job_name].retry_sleep is None:
             job_retry_sleep = family.config.retry_sleep
-        if job_retry_sleep is None:
-            job_retry_sleep = 0
         _get_job_status(family=family,
                         job_name=job_name,
                         logged_jobs_dict=logged_jobs_dict,
